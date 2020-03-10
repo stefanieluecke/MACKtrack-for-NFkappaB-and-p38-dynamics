@@ -1,11 +1,11 @@
-function [metrics,aux, graph, info, measure] = nfkbmetrics(id,varargin)
+function [metrics,aux, graph, info, measure] = ktrmetrics(id,varargin)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-% metrics = nfkbmetrics(id)
+% metrics = ktrmetrics(id)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-% NFKBMETRICS uses the see_nfkb_native function to filter and preprocess NFkB trajectories,
+% KTRMETRICS uses the see_ktr_SL function to filter and preprocess KTR trajectories,
 % then calculates related metrics regarding activation. Metric types include:
 % 
-% 1) time series (base NFkB dynamics, resampled to 12 frames/hr
+% 1) time series (base KTR dynamics, resampled to 12 frames/hr
 % 2) integrated activity
 % 3) differentiated activity
 % 4) calculated metrics: measuring aspects of oscillation, duration, timing ,and amplitude
@@ -17,14 +17,15 @@ function [metrics,aux, graph, info, measure] = nfkbmetrics(id,varargin)
 % 'Display'         'on' or 'off' - show graphs (default: process data only; no graphs)
 % 'Verbose'          'on' or 'off' - show verbose output
 % 'MinLifetime'      final frame used to filter for long-lived cells (default = 100)
-% 'TrimFrame'        trim sets to common length (default = 157 timepoints) 
+% 'TrimFrame'        trim sets to common length (default = 254 timepoints) 
 % 'ConvectionShift'  max allowed time shift between scenes (to correct for poor mixing - default is no shift allowed)
 % 'MinSize'
+% 'Baseline'        determines what is considered "on" and "off" for the reporter
 %
 % OUTPUT: 
 % metrics   structure with output fields
 % aux       Extra data (e.g. fourier information (FFT, power, frequencies), thresholds used in envelope/duration)
-% graph     main structure output from see_nfkb_native
+% graph     main structure output from see_ktr_SL
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 %% INPUT PARSING
 % Create input parser object, add required params from function input
@@ -34,13 +35,13 @@ valid_id = @(x) assert((isnumeric(x)&&length(x)==1)||exist(x,'file'),...
     'ID input must be spreadsheet ID or full file path');
 addRequired(p,'id',valid_id);
 % Optional parameters
-addParameter(p,'Baseline', 1.0, @isnumeric);
-addParameter(p, 'StartThresh', 2, @isnumeric); 
+% Baseline is also optional input for see_KTR funciton, but not referred to within function, use only here
+addParameter(p,'Baseline', 0.1, @isnumeric);
+addParameter(p, 'StartThresh', 0.6, @isnumeric); 
 addParameter(p, 'MinSize', 90, @isnumeric); 
 addParameter(p,'MinLifetime',100, @isnumeric);
-addParameter(p,'TrimFrame',157, @isnumeric);
-addParameter (p, 'GraphLimits',[-0.25 10],@isnumeric);
-addParameter(p,'Verbose','off', @(x) any(validatestring(x,expectedFlags)))
+addParameter(p,'TrimFrame',139, @isnumeric);
+addParameter (p, 'GraphLimits',[0 0.6],@isnumeric);
 valid_conv = @(x) assert(isnumeric(x)&&(x>=0)&&(length(x)==1),...
     'Convection correction parameter must be single integer >= 0');
 addParameter(p,'ConvectionShift',1, valid_conv);
@@ -57,12 +58,12 @@ off_pad = 12; % Signal time added to trajectory in  FFT calculation (keeps trans
 %{
 %Brooks' version commented out, I'm trying Ade's version (below)
 if ~ismember('MinLifetime',p.UsingDefaults)
-   [graph, info, measure] = see_nfkb_native(id,'MinLifetime',p.Results.MinLifetime,...
+   [graph, info, measure] = see_ktr_SL(id,'MinLifetime',p.Results.MinLifetime,...
                             'ConvectionShift',p.Results.ConvectionShift);
    graph.var = graph.var(:,1:p.Results.MinLifetime);
    graph.t = graph.t(1:size(graph.var,2));
 else
-   [graph, info, measure] = see_nfkb_native(id, 'ConvectionShift',p.Results.ConvectionShift);
+   [graph, info, measure] = see_ktr_SL(id, 'ConvectionShift',p.Results.ConvectionShift);
 end
 %}
 
@@ -71,29 +72,32 @@ MinSize = p.Results.MinSize;
 MinLifetime = p.Results.MinLifetime; 
 ConvectionShift = p.Results.ConvectionShift; 
 
-
+%Test 190822
 %if ~ismember('MinLifetime',p.UsingDefaults)
-
-   %adaption SL 191014
-   %[graph, info, measure] = see_nfkb_native(id,'MinLifetime',MinLifetime,...
-    %                        'ConvectionShift',ConvectionShift, 'Baseline',Baseline,...
-     %                       'MinSize', MinSize,'StartThresh', StartThresh);
-   [graph, info, measure] = filter_nfkb_native(id,'MinLifetime',MinLifetime,...
-                            'ConvectionShift',ConvectionShift, 'Baseline',Baseline,...
-                            'MinSize', MinSize,'StartThresh', StartThresh, 'Verbose', Verbose);
+ %  [graph, info, measure] = see_ktr_SL(id,'MinLifetime',MinLifetime,...
+  %                          'ConvectionShift',ConvectionShift, 'Baseline',Baseline,...
+   %                         'MinSize', MinSize,'StartThresh', StartThresh, 'Source', p.Results.Source);
    
 %else
-   %adaption SL 191014
-   %[graph, info, measure] = see_nfkb_native(id, 'ConvectionShift',ConvectionShift,...
-    %   'Baseline', Baseline,'StartThresh', StartThresh, 'MinSize', MinSize);
-   %[graph, info, measure] = filter_nfkb_native(id, 'ConvectionShift',ConvectionShift,...
-    %   'Baseline', Baseline,'StartThresh', StartThresh, 'MinSize', MinSize);
+ %  [graph, info, measure] = see_ktr_SL(id, 'ConvectionShift',ConvectionShift,...
+  %     'Baseline', Baseline,'StartThresh', StartThresh, 'MinSize', MinSize, 'Source', p.Results.Source);
 %end
+
+if ~ismember('MinLifetime',p.UsingDefaults)
+   [graph, info, measure] = see_ktr_SL(id,'MinLifetime',MinLifetime,...
+                            'ConvectionShift',ConvectionShift,...
+                            'MinSize', MinSize,'StartThresh', StartThresh);
+   
+else
+   [graph, info, measure] = see_ktr_SL(id, 'ConvectionShift',ConvectionShift,...
+       'StartThresh', StartThresh, 'MinSize', MinSize);
+end
+
 
 graph.var = graph.var(:,1:min(p.Results.TrimFrame, size(graph.var,2)));
 graph.t = graph.t(1:size(graph.var,2));
 graph.opt = maketicks(graph.t,info.GraphLimits,0);
-graph.opt.Name= 'NF\kappaB Activation';
+graph.opt.Name= 'KTR Activation';
 
 if ~ismember ('Baseline',p.UsingDefaults)
     Baseline = info.Baseline;

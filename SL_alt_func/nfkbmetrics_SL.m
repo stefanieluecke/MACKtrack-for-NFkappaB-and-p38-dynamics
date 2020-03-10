@@ -14,7 +14,6 @@ function [metrics,aux, graph, info, measure] = nfkbmetrics(id,varargin)
 % id             filename or experiment ID (from Google Spreadsheet specified in "locations.mat")
 %
 % INPUT PARAMETERS (optional; specify with name-value pairs)
-% 'Display'         'on' or 'off' - show graphs (default: process data only; no graphs)
 % 'Verbose'          'on' or 'off' - show verbose output
 % 'MinLifetime'      final frame used to filter for long-lived cells (default = 100)
 % 'TrimFrame'        trim sets to common length (default = 157 timepoints) 
@@ -40,6 +39,7 @@ addParameter(p, 'MinSize', 90, @isnumeric);
 addParameter(p,'MinLifetime',100, @isnumeric);
 addParameter(p,'TrimFrame',157, @isnumeric);
 addParameter (p, 'GraphLimits',[-0.25 10],@isnumeric);
+expectedFlags = {'on','off'};
 addParameter(p,'Verbose','off', @(x) any(validatestring(x,expectedFlags)))
 valid_conv = @(x) assert(isnumeric(x)&&(x>=0)&&(length(x)==1),...
     'Convection correction parameter must be single integer >= 0');
@@ -72,24 +72,9 @@ MinLifetime = p.Results.MinLifetime;
 ConvectionShift = p.Results.ConvectionShift; 
 
 
-%if ~ismember('MinLifetime',p.UsingDefaults)
-
-   %adaption SL 191014
-   %[graph, info, measure] = see_nfkb_native(id,'MinLifetime',MinLifetime,...
-    %                        'ConvectionShift',ConvectionShift, 'Baseline',Baseline,...
-     %                       'MinSize', MinSize,'StartThresh', StartThresh);
-   [graph, info, measure] = filter_nfkb_native(id,'MinLifetime',MinLifetime,...
+[graph, info, measure] = filter_nfkb_native(id,'MinLifetime',MinLifetime,...
                             'ConvectionShift',ConvectionShift, 'Baseline',Baseline,...
-                            'MinSize', MinSize,'StartThresh', StartThresh, 'Verbose', Verbose);
-   
-%else
-   %adaption SL 191014
-   %[graph, info, measure] = see_nfkb_native(id, 'ConvectionShift',ConvectionShift,...
-    %   'Baseline', Baseline,'StartThresh', StartThresh, 'MinSize', MinSize);
-   %[graph, info, measure] = filter_nfkb_native(id, 'ConvectionShift',ConvectionShift,...
-    %   'Baseline', Baseline,'StartThresh', StartThresh, 'MinSize', MinSize);
-%end
-
+                            'MinSize', MinSize,'StartThresh', StartThresh, 'Verbose', p.Results.Verbose, 'GraphLimits', p.Results.GraphLimits);
 graph.var = graph.var(:,1:min(p.Results.TrimFrame, size(graph.var,2)));
 graph.t = graph.t(1:size(graph.var,2));
 graph.opt = maketicks(graph.t,info.GraphLimits,0);

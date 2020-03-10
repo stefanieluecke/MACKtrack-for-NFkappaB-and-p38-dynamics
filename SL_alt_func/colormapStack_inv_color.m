@@ -1,4 +1,4 @@
-function h = colormapStack(measure1, CellData, options, fig_handle)
+function h = colormapStack_inv_color(measure1, CellData, options, fig_handle)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 % Make stacked-colormap plot of cells
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -19,7 +19,7 @@ handles.Options = options;
 
 
 % Modify colormap so that time values outside of cell lifetime display as gray
-mod_colormap = divergingmap(0:1/1023:1,[14 28 77]/255,[158 27 2]/255);%opens utilities function to make diverging color map with these specified rgb codes and the sepcified step size
+mod_colormap = divergingmap(0:1/1023:1,[158 27 2]/255,[14 28 77]/255);%opens utilities function to make diverging color map with these specified rgb codes and the sepcified step size
 mod_colormap(1,:) = [0.1 0.1 0.1]; %?
 
 % Make plot, setting axes and other options
@@ -34,8 +34,7 @@ hold off
 colormap(mod_colormap)
 c = colorbar('YTick',options.MeasurementTicks,'YTickLabel',options.MeasurementTickLabels);
 set(c,'TickLength',0.003*ones(size(get(c,'TickLength'))))
-ylabel(c,[options.Name],'FontSize',14);
-set(handles.h3,'Parent',handles.axes1);
+ylabel(c,[options.Name],'FontSize',14);set(handles.h3,'Parent',handles.axes1)
 set(handles.axes1,'YTick',[],'XTick',options.TimeTicks,'TickLength',[0.005 0.005])
 % - - - - - - - 4) Set fonts, labels, and data cursor callback - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 xlabel(handles.axes1,'Time (h)','FontSize',14);

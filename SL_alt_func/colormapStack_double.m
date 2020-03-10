@@ -1,10 +1,10 @@
-function h = colormapStack(measure1, CellData, options, fig_handle)
+function h = colormapStack_double(measure1, measure2, CellData, options1,options2, fig_handle)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 % Make stacked-colormap plot of cells
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 % Make figure (if not specified)
-if nargin < 4
+if nargin < 6
     fig_handle = figure(gcf);% Create new figure, set properties
     set(fig_handle,'Color',[1 1 1],'InvertHardCopy', 'off','PaperPositionMode','auto')
 end
@@ -15,30 +15,68 @@ handles.figure1 = fig_handle;
 handles.axes1 = axes('Parent', fig_handle);
 handles.CellData = CellData;
 handles.Measurement1 = measure1;
-handles.Options = options;
-
+handles.Measurement2 = measure2;
+handles.Options1 = options1;
+handles.Options2 = options2;
 
 % Modify colormap so that time values outside of cell lifetime display as gray
 mod_colormap = divergingmap(0:1/1023:1,[14 28 77]/255,[158 27 2]/255);%opens utilities function to make diverging color map with these specified rgb codes and the sepcified step size
 mod_colormap(1,:) = [0.1 0.1 0.1]; %?
 
 % Make plot, setting axes and other options
+subplot(1,2,1);
+
 measure1DOWN = [zeros(1,size(measure1,2));measure1(1:end-1,:)];
 measure1UP = [measure1(2:end,:);zeros(1,size(measure1,2))];
-handles.h0 = imagesc(options.TimeBounds, [1 size(measure1,1)],nan(size(measure1)),options.MeasurementBounds);
+handles.h0 = imagesc(options1.TimeBounds, [1 size(measure1,1)],nan(size(measure1)),options1.MeasurementBounds);
 hold on
-handles.h1 = imagesc(options.TimeBounds, [1 size(measure1,1)],measure1UP,options.MeasurementBounds);
-handles.h2 = imagesc(options.TimeBounds, [1 size(measure1,1)],measure1DOWN,options.MeasurementBounds);
-handles.h3 = imagesc(options.TimeBounds, [1 size(measure1,1)],measure1,options.MeasurementBounds); 
+handles.h1 = imagesc(options1.TimeBounds, [1 size(measure1,1)],measure1UP,options1.MeasurementBounds);
+handles.h2 = imagesc(options1.TimeBounds, [1 size(measure1,1)],measure1DOWN,options1.MeasurementBounds);
+handles.h3 = imagesc(options1.TimeBounds, [1 size(measure1,1)],measure1,options1.MeasurementBounds); 
 hold off
+
 colormap(mod_colormap)
-c = colorbar('YTick',options.MeasurementTicks,'YTickLabel',options.MeasurementTickLabels);
+c = colorbar('YTick',options1.MeasurementTicks,'YTickLabel',options1.MeasurementTickLabels);
 set(c,'TickLength',0.003*ones(size(get(c,'TickLength'))))
-ylabel(c,[options.Name],'FontSize',14);
-set(handles.h3,'Parent',handles.axes1);
-set(handles.axes1,'YTick',[],'XTick',options.TimeTicks,'TickLength',[0.005 0.005])
+ylabel(c,[options1.Name],'FontSize',14);
+xlabel('Time (h)','FontSize',14);
+yticks([]);
+xticks(options1.TimeTicks);
+% ticklength(0.005, 0.005);
+% set(handles.h3,'Parent',handles.axes1)
+% set(handles.axes1,'YTick',[],'XTick',options1.TimeTicks,'TickLength',[0.005 0.005])
+
+
+subplot(1,2,2);
+
+measure2DOWN = [zeros(1,size(measure2,2));measure2(1:end-1,:)];
+measure2UP = [measure2(2:end,:);zeros(1,size(measure2,2))];
+handles.h4 = imagesc(options2.TimeBounds, [1 size(measure2,1)],nan(size(measure2)),options2.MeasurementBounds);
+hold on
+handles.h5 = imagesc(options2.TimeBounds, [1 size(measure2,1)],measure2UP,options2.MeasurementBounds);
+handles.h6 = imagesc(options2.TimeBounds, [1 size(measure2,1)],measure2DOWN,options2.MeasurementBounds);
+handles.h7 = imagesc(options2.TimeBounds, [1 size(measure2,1)],measure2,options2.MeasurementBounds); 
+hold off
+
+colormap(mod_colormap)
+d = colorbar('YTick',options2.MeasurementTicks,'YTickLabel',options2.MeasurementTickLabels);
+set(d,'TickLength',0.003*ones(size(get(d,'TickLength'))))
+ylabel(d,[options2.Name],'FontSize',14);
+xlabel('Time (h)','FontSize',14);
+yticks([]);
+xticks(options2.TimeTicks);
+% xlabel(handles.axes1,'Time (h)','FontSize',14);
+% set(handles.h7,'Parent',handles.axes2)
+% set(handles.axes2,'YTick',[],'XTick',options2.TimeTicks,'TickLength',[0.005 0.005])
+
+
+
+%{
+
+% This would have to be added to make figure resizable, etc. ; Problems
+using handles.axes1
+
 % - - - - - - - 4) Set fonts, labels, and data cursor callback - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-xlabel(handles.axes1,'Time (h)','FontSize',14);
 
 dcm_obj = datacursormode(fig_handle);
 set(dcm_obj,'UpdateFcn',{@tooltipfcn,handles},'DisplayStyle', 'window')
@@ -46,7 +84,7 @@ set(fig_handle,'ResizeFcn',{@fig_resize,handles},'DockControls','on')
 if nargout>0
     h = handles.figure1;
 end
-% ========================================================================================
+
 
 
 function txt = tooltipfcn(~,event_obj,handles)
@@ -122,3 +160,5 @@ set(handles.axes1,'OuterPosition',[10/figPos(3),60/figPos(4),1-50/figPos(3),(fig
 set(handles.axes1,'LooseInset',get(handles.axes1,'TightInset')+ [0 0 100/figPos(4) 15/figPos(4)])
 
 % ========================================================================================
+
+%}

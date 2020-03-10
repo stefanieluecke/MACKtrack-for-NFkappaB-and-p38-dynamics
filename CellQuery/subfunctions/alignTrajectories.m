@@ -1,7 +1,8 @@
 function [measure_out,shift_xy] = alignTrajectories(measurement, celldata, align_win, max_shift)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 % ALIGNTRAJECTORIES takes input measurement (e.g. NFkB) and XYs by minimizing Euclidean
-% distances. Trajectories will be shortened by 2*max_shift.
+% distances. Trajectories will be shortened by 2*max_shift. To calculate
+% shifted measurement in case of late activating XY positions
 %
 % [measure_out,shift_xy] = alignTrajectories(measurement, celldata, max_shift)
 %
@@ -10,17 +11,17 @@ function [measure_out,shift_xy] = alignTrajectories(measurement, celldata, align
 % align_win      (opt) window to use in calculating pairwise distances
 % max_shift      (opt) maximum allowable shift for a given XY pos - defualts to 3
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-
-if nargin<4
+%sets optional input arguments to default values if not specified by user 
+if nargin<4 %sets max_shift to default(3) if there's less than 4 input arguments (thus assuming that maxshift was the argument not specified by user ?! Is that correct? What if user defines max_shift, but not align_win?)
     max_shift = 3;
-    if nargin<3
+    if nargin<3 %sets align_win to default (60), if there's less than 3 input arguments
         align_win = 60;
     end
 end
 
-xypos = unique(celldata(:,1));
-M = size(measurement,2)-2*max_shift;
-if align_win>M
+xypos = unique(celldata(:,1)); %makes list of xy positions derived unique values from column 1 of celldata 
+M = size(measurement,2)-2*max_shift; %defines M as a number correspond to the number of timepoints minus 2*the allowable shift
+if align_win>M %ensures the alignment window is not larger than the new time point procession
     align_win = M;
 end
 orig = measurement;

@@ -1,9 +1,11 @@
-function [graph, info, measure] = see_nfkb_native(id,varargin)
+function [graph, info, measure] = see_ktr_nuclear(id,varargin)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-% [graph, info, measure] = see_nfkb_native(id,graph_flag, verbose_flag)
+% [graph, info, measure] = see_ktr_nuclear(id,graph_flag, verbose_flag)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-% SEE_NFKB_NATIVE is a data processing.and visualization script specialized to handle
-% a nuclear-translocating species (it looks for NFkBdimNuclear and NFkBdimCytoplasm measurements).
+% see_ktr_nuclear is a data processing.and visualization script derived from see_nfkb_native (specialized to handle
+% a nuclear-translocating species). It looks for KTR_nuc1 measurements. It
+% is being tested as an alternative to KTR_ratio1 measurements for KTR
+% activity visualization
 %
 % INPUTS (required):
 % id             filename or experiment ID (from Google Spreadsheet specified in "locations.mat")
@@ -17,11 +19,10 @@ function [graph, info, measure] = see_nfkb_native(id,varargin)
 % 'MinLifetime'     final frame used to filter for long-lived cells, default set to 100
 % 'ConvectionShift' Maximum allowable time-shift between different XYs (to correct for poor mixing), default is 1
 % 'MinSize'         minimal allowable nuclear area to exclude debris, etc, default set to 90
-% 'StartThresh'     max allowable starting threshhold to filter out cells
-%                   with pre-activated NFkB, default is 2
-% 'GraphLimits'     default is [-0.25 10]
-% 'Baseline'        default is 1 %? nfkb baseline seems to be defined without this below. Is this used at all..?
-% 'Source'          default is 'ade' %used in Ade version as input for loadID function, thus unneccessary, unless I add more input arguments when calling loadID
+% 'StartThresh'     min allowable starting threshhold to filter out cells
+%                   with pre-activated ktr, default is 200 %tbd whehter this is useful for ktr function
+% 'GraphLimits'     default is [0 400]
+% % 'Baseline'        default is 1 in nfkb function %? baseline seems to be defined without this below. %?Is this used at all..? %does baseline defining make sense for ratios like this?
 
 % OUTPUTS:  
 % graph          primary output structure; must specify
@@ -29,15 +30,14 @@ function [graph, info, measure] = see_nfkb_native(id,varargin)
 %                   2) time vector for all images (graph.t) 
 %                   3) XY convection adjustment (graph.shift) 
 % info           secondary output structure; must specify
-%                   1) Y limits for graphing (info.GraphLimits)
+%                   1) Y limits for graphing (info.graph_limits)
 %                   2) parameters from loadID.m (info.parameters) 
 % measure         full output structure from loadID
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 %% Create input parser object (checks if functions is provided with correct inputs), add required params from function input
 p = inputParser;
-% Required: ID input; checks whether ID input is valid (is a numeric array of only
-    % one number, or is a structure array (?), or if it is a file)
+% Required: ID input; checks whether ID input is valid (is a numeric array of only one number, or is a structure array (?), or if it is a file)
 valid_id = @(x) assert((isnumeric(x)&&length(x)==1)||isstruct(x)||exist(x,'file'),...
     'ID input must be spreadsheet ID or full file path');
 addRequired(p,'id',valid_id);
@@ -51,12 +51,9 @@ valid_conv = @(x) assert(isnumeric(x)&&(x>=0)&&(length(x)==1),...
 addParameter(p,'ConvectionShift',1, valid_conv); %allows adjustment of convection shift (?)
 addParameter(p,'MinLifetime',100, @isnumeric); %allows adjustment of minimum lifetime (?)
 addParameter(p,'MinSize',90, valid_conv); %allows adjustment of minimum size (?)
-%06-20-19 addition of input parameter to easily change starting activity threshold
-addParameter(p,'StartThresh',2, valid_conv); %max allowable starting threshhold to filter out cells with pre-activated NFkB, default is 2
-%06-21-19 added optional parameters from Ade
-addParameter (p, 'Baseline', 1, @isnumeric);
-addParameter (p, 'GraphLimits',[-0.25 10],@isnumeric);
-addParameter (p, 'Source', 'ade'); %? see whether I need to include this
+addParameter(p,'StartThresh',200, valid_conv); %min allowable starting threshhold to filter out cells with low starting KTR_nuc (pre-activated or just heterogeneity?) KTR, default is 200
+% addParameter (p, 'Baseline', 1, @isnumeric); %??leave this out for KTR for now, maybe set to 0.2 if needed
+addParameter (p, 'GraphLimits',[0 0.1],@isnumeric);
 
 
 % Parse parameters, assign to variables
@@ -66,7 +63,7 @@ if strcmpi(p.Results.Verbose,'on')
 else
     verbose_flag = 0;
 end
-if strcmpi(p.Results.Display,'on') %sets graph_flag to 1 if input parameter Graph is set to 'on'
+if strcmpi(p.Results.Display,'on') %sets graph_flag to 1 if input parameter Verbose is set to 'on'
     graph_flag = 1; 
 else
     graph_flag = 0;
@@ -75,27 +72,23 @@ MinLifetime = p.Results.MinLifetime; %pulls number for MinLifetime from input pa
 max_shift = p.Results.ConvectionShift; % Max allowable frame shift in XY-specific correction, takes either default ConvectionShift parameter or the one specified by user
 
 % Set display/filtering parameters
-% 06-19-19 test for less filtering 
-%start_thresh = 2; % Maximal allowable start level above baseline
-%start_thresh = 50; % Maximal allowable start level above baseline
-start_thresh = p.Results.StartThresh; % 06-20-19 add StartThresh as input parameter
+start_thresh = p.Results.StartThresh; % add StartThresh as input parameter
 area_thresh = p.Results.MinSize; % Minimum nuclear area (keeps from including small/junk objects)
 
 %% Load AllMeasurements data
 [measure, info] = loadID(id);
-info.ImageExpr = info.parameters.nfkbdimModule.ImageExpr; %this refers to ImageExpr in nfkbdimModule in parameters of AllMeasurement file
+info.ImageExpr = info.parameters.ktrModule.ImageExpr; %this refers to ImageExpr in ktrModule in parameters of AllMeasurement file
 
-%06-19-19 test for show full activation by changing upper graph limit
-%info.GraphLimits = [-0.25 8]; % Min/max used in graphing, replaced 06-21-19
-info.GraphLimits = p.Results.GraphLimits; % Min/max used in graphing
-info.Baseline = p.Results.Baseline;
+info.graph_limits = p.Results.GraphLimits; % Min/max used in graphing derived from input parameters
+
+%info.Baseline = p.Results.Baseline; %seems like baseline is not referred to below and I'm undecided about whether it's useful for KTR
+
 %test 06-26-19
 % dendro = 1;
 dendro = 0;
 colors = setcolors;
-baseline_length = size(measure.NFkBdimNuclear,2); % Endframe for baseline calculation (use entire vector), baseline length is the size of the rows, i.e. number of timepoints 
+baseline_length = size(measure.KTR_nuc1,2); % Endframe for baseline calculation (use entire vector), baseline length is the size of the rows, i.e. number of timepoints 
 
-%{
 % Look for locations .mat in default MACKtrack directory, or in current directory
     % Ade's version doesn't include this whole load section --> unnecessary?
 home_folder = mfilename('fullpath');
@@ -105,8 +98,9 @@ if exist([home_folder(1:slash_idx(end-1)),'locations.mat'],'file')
 elseif exist([home_folder(1:slash_idx(end)),'locations.mat'],'file')
     load([home_folder(1:slash_idx(end-1)), 'locations.mat'],'-mat')
 end
-%}
-%{
+
+%%
+%{ 
 % Experiment-specific visualization settings/tweaks (set by spreadsheet URL)
 % BT's experiments
 if isnumeric(id)
@@ -114,12 +108,12 @@ if isnumeric(id)
         % a) Heterozygous cell experiments
         if (id <= 270) || ismember(id,[370:379, 384:391, 395, 396])
             start_thresh = 1.5;
-            info.GraphLimits = [-0.25 5.5];
+            info.graph_limits = [-0.25 5.5];
         end
 
         % b) bad light guide (4 experiments from same day)
         if ismember(id,315:318)
-            info.GraphLimits = [-0.2 4];
+            info.graph_limits = [-0.2 4];
         end
         % d) 100uM CpG - delayed stimulation
         if id==283
@@ -147,10 +141,10 @@ if isnumeric(id)
         % a) early experiments; heterozygous cells
         if id <= 60
             start_thresh = 1.5;
-            info.GraphLimits = [-0.25 6];
+            info.graph_limits = [-0.25 6];
         else
             start_thresh = 1.8;
-            info.GraphLimits = [-0.25 5.5];
+            info.graph_limits = [-0.25 5.5];
             info.baseline = 0.75;
         end
     end
@@ -160,37 +154,51 @@ end
 robuststd = @(distr, cutoff) nanstd(distr(distr < (nanmedian(distr)+cutoff*nanstd(distr)))); %standard deviation of ??
 
 % Filtering, part 1 cell fate and cytoplasmic intensity
+% 06-27-19 moved ktr=measure.... from above ktr_smooth = ...., check whether that's okay
+%test 09-06-19
+ktr = measure.KTR_nuc1(:,:); %ktr is defined as KTR nuclear values from ktr module
+
+%ktr = 1./measure.KTR_nuc1(:,:); %ktr is defined as KTR nuclear values from ktr module
+%ktr(ktr==0) = nan; %this comes from see_ktr function, test if it's necessary --> not necessary
 droprows = []; %creates an empty matrix/array?
-droprows = [droprows, sum(isnan(measure.NFkBdimNuclear(:,1:4)),2)>2]; % Use only cells existing @ expt start %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 2 NaN values in nuclear NFkB levels within first 4 timepoints
-droprows = [droprows, sum(isnan(measure.NFkBdimNuclear(:,1:MinLifetime)),2)>3]; % Use only long-lived cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 3 NaN values in nuclear NFkB levels within minimum lifetime
-droprows = [droprows, sum(measure.NFkBdimCytoplasm(:,1:4)==0,2)>0]; % Very dim cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 0 nfkb cytoplasmic values in first four timepoints that are equal to 0
+droprows = [droprows, sum(isnan(measure.KTR_nuc1(:,1:4)),2)>2]; % Use only cells existing @ expt start %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 2 NaN values in KTR nuclear levels within first 4 timepoints
+droprows = [droprows, sum(isnan(measure.KTR_nuc1(:,1:MinLifetime)),2)>3]; % Use only long-lived cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 3 NaN values in KTR nuclear levels within minimum lifetime
+% very dim cells filter removed for now, find out later, what version could be useful for KTR
+%droprows = [droprows, sum(measure.NFkBdimCytoplasm(:,1:4)==0,2)>0]; % Very dim cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 0 nfkb cytoplasmic values in first four timepoints that are equal to 0
 %droprows = [droprows, info.CellData(:,end)]; % Non-edge cells
 
-% NFkB normalization - subtract baseline for each cell (either starting ?% value or 4th percentile of smoothed trajectory)%?whatever is smaller?
-nfkb = measure.NFkBdimNuclear(:,:); %nfkb is defined as NFkB nuclear measurement from NFkBdim module
-nfkb_smooth = nan(size(nfkb)); %NaN array of same size as nfkb is created, for created smoothed trajectory
-for i = 1:size(nfkb,1)
-    nfkb_smooth(i,~isnan(nfkb(i,:))) = medfilt1(nfkb(i,~isnan(nfkb(i,:))),3); %replaces every element in nfkb_smooth that is not NaN in corresponding nfkb position with a 3rd order median filtered version %?whatever that means...
+%? Think carefully about what baseline correction is appropriate here, test with and without
+% KTR normalization - subtract baseline for each cell (either starting ?% value or 4th percentile of smoothed trajectory)%?whatever is smaller?
+%? adjust the min to max for this measurement??? or remove baseline correction?
+ktr_smooth = nan(size(ktr)); %NaN array of same size as ktr is created, for created smoothed trajectory
+for i = 1:size(ktr,1)
+    ktr_smooth(i,~isnan(ktr(i,:))) = medfilt1(ktr(i,~isnan(ktr(i,:))),3); %replaces every element in ktr_smooth that is not NaN in corresponding ktr position with a 3rd order median filtered version %?whatever that means...
 end
-nfkb_min = prctile(nfkb_smooth(:,1:baseline_length),5,2); %calculates the 5th percentile along rows of the nfkb smoothed trajectory up to the baseline length, Ade's version uses 2,2 instead of 5,2
+ktr_min = prctile(ktr_smooth(:,1:baseline_length),5,2); %calculates the 5th percentile along rows of the ktr smoothed trajectory up to the baseline length, Ade's nfkb version uses 2,2 instead of 5,2
 
-nfkb_baseline = nanmin([nanmin(nfkb(:,1:4),[],2),nfkb_min],[],2); %nfkb baseline is defined as minimum of (nfkb_min and the minimum of nfkb at the first four timepoints)(the rows of ?), one per trajectory %?
-nfkb = nfkb - repmat(nfkb_baseline,1,size(nfkb,2)); %nfkb is re-defined as nfkb values minus nfkb_baseline array
+
+ktr_baseline = nanmin([nanmin(ktr(:,1:4),[],2),ktr_min],[],2); %ktr baseline is defined as minimum of (ktr_min and the minimum of ktr at the first four timepoints)(the rows of ?) %? what is this for?
+ktr = ktr - repmat(ktr_baseline,1,size(ktr,2)); %ktr is re-defined as ktr values minus ktr_baseline array
 if verbose_flag
-    figure, imagesc(nfkb,prctile(nfkb(:),[5,99])),colormap(parula), colorbar %plots raw baseline-subttracted trajectories, using 5th and 99th percentile of nfkb as limits
+    figure, imagesc(ktr,prctile(ktr(:),[5,99])),colormap(parula), colorbar %plots raw baseline-subttracted trajectories, using 5th and 99th percentile of ktr nuclear as limits
     title('All (baseline-subtracted) trajectories')
 end
-nfkb = nfkb/mean(info.parameters.adj_distr(2,:)); %nfkb is re-defined of nfkb divided by mean of second row of adj_distr %? but I don't know what that does...
-%allow image to image comparison
+
+%? think carefully if this is needed (and for what) for ktr 
+% this divides by 23 or sth for my example, probably not useful for ktr, but test
+% ktr = ktr/mean(info.parameters.adj_distr(2,:)); %ktr is re-defined of ktr divided by mean of second row of adj_distr %? but I don't know what that does...
 
 % Filtering, part 2: eliminate outlier cells (based on mean value)
-nfkb_lvl = reshape(nfkb(max(droprows,[],2) == 0,:),[1 numel(nfkb(max(droprows,[],2) == 0,:))]); %sets nfkb level as nfkb measurements of cells (full trajectories) to be kept reshaped to a 1xtotal number of array elements matrix 
-droprows =  [droprows, (nanmean(abs(nfkb-nanmean(nfkb_lvl)),2)./nanstd(nfkb_lvl))>=3]; %removes cells with mean levels larger than 3x standard deviation (mean of all values subtracted from each nfkb element, absolute value of that, mean across each trajectory, each element dividided by standard deviation of nfkb level, check if larger or equal than 3, add to droprows as a 1/0 column
-droprows =  [droprows, (nanmean(abs(nfkb-nanmean(nfkb_lvl)),2)./nanstd(nfkb_lvl))>=1.7]; %removes cells with mean levels larger than 1.7x standard deviation 
+ktr_lvl = reshape(ktr(max(droprows,[],2) == 0,:),[1 numel(ktr(max(droprows,[],2) == 0,:))]); %sets ktr level as ktr nuclear measurements of cells (full trajectories) to be kept reshaped to a 1xtotal number of array elements matrix 
+%? test whether these threshold are appropriate for ktr and where they come from
+droprows =  [droprows, (nanmean(abs(ktr-nanmean(ktr_lvl)),2)./nanstd(ktr_lvl))>=3]; %removes cells with mean levels larger than 3x standard deviation (mean of all values subtracted from each ktr element, absolute value of that, mean across each trajectory, each element dividided by standard deviation of ktr level, check if larger or equal than 3, add to droprows as a 1/0 column
+droprows =  [droprows, (nanmean(abs(ktr-nanmean(ktr_lvl)),2)./nanstd(ktr_lvl))>=1.7]; %removes cells with mean levels larger than 1.7x standard deviation 
 
-% Filtering, part 3: nuclear stain intensity and starting NFkB value
+% Filtering, part 3: nuclear stain intensity and starting ktr nuclear value
+% %I'll keep the nuclear stain part from see_nfkb function
 keep = max(droprows,[],2) == 0; %index of cells to keep are those rows of the droprows vector where no columns show a 1
-start_lvl = nanmin(nfkb(keep,1:3),[],2); % this seems to be used to show nfkb start level, but is not used to filter, calculates start level for each cell (those kept) based on the minimum of the first three timepoints (why the minimum and not the average?)
+%start_lvl = nanmin(ktr(keep,1:3),[],2); % this seems to be used to show ktr start level, but is not used to filter, calculates start level for each cell (those kept) based on the minimum of the first three timepoints (why the minimum and not the average?)
+start_lvl = nanmax(ktr(keep,1:3),[],2); % this seems to be used to show ktr start level, but is not used to filter, calculates start level for each cell (those kept) based on the minimum of the first three timepoints (why the minimum and not the average?)
 
 % test :4/25/2019
 measure.MeanIntensityNuc = measure.MeanNuc1;
@@ -199,15 +207,19 @@ measure.MeanIntensityNuc = measure.MeanNuc1;
 nuc_lvl = nanmedian(measure.MeanIntensityNuc(keep,1:31),2); %defines nuc_lvl as median nuclear intensity (this is DNA staining?) in first 31 timepoints, for each column/timepoint(?) 
 nuc_thresh = nanmedian(nuc_lvl)+2.5*robuststd(nuc_lvl(:),2); %defines the acceptable threshold for nuclear intensity as median of nuclear levels + 2.5x fancy std defined above ???
 
-droprows =  [droprows, prctile(nfkb(:,1:8),18.75,2) > start_thresh]; %removes cells for which the 19th percentile of the first 8 timepoints is larger than start threshold %/why?
+%? think about whether start threshold removal is appropriate like this for these values
+droprows =  [droprows, prctile(ktr(:,1:8),18.75,2) > start_thresh]; %removes cells for which the 19th percentile of the first 8 timepoints is larger than start threshold %/why?
+%droprows =  [droprows, prctile(ktr(:,1:8),18.75,2) < start_thresh]; %removes cells for which the 19th percentile of the first 8 timepoints is larger than start threshold %/why?
 droprows =  [droprows, nanmedian(measure.MeanIntensityNuc(:,1:31),2) > nuc_thresh];%removes cells with median nuclear intensity above nuclear threshold in first 31 timepoints
 droprows =  [droprows, nanmedian(measure.Area,2) < area_thresh]; %removes cells with median areasmaller than the area threshold (to remove small particles)
 info.dropped = droprows; %added from Ade's version 06-24-19
 
 % Show some filter information
 if verbose_flag
-    filter_str = {'didn''t exist @ start', 'short-lived cells', 'NFkB<background',...
+    filter_str = {'didn''t exist @ start', 'short-lived cells', ...
         'outliers [mean val >3*std]','extreme val [mean>1.7*std]', 'active @ start', 'high nuclear stain','low area'};
+    %filter_str = {'didn''t exist @ start', 'short-lived cells', 'NFkB<background',...
+     %   'outliers [mean val >3*std]','extreme val [mean>1.7*std]', 'active @ start', 'high nuclear stain','low area'};
     disp(['INITIAL: ', num2str(size(droprows,1)),' cells'])
     for i = 1:size(droprows,2)
         if i ==1
@@ -224,29 +236,27 @@ if verbose_flag
     %current (06/25/19)ranksmult function plots 15x8 subplots with
     %ascending ordering (evenly spaced over entire distribution (ie representing everything from lowest to highest)
     % The title problem is not fully solved, the title is in the wrong place, fix later
-    ranksmult(nfkb(keep,:),start_lvl); %ranksmult is function stored under utilities, uses nfkb matrix and the start level for each cell as input 
-    %h = suptitle(['x = NFkB activation @ start. Threshold = ',num2str(start_thresh)]);%can't find 'subtitle' in Matlab documentation, but occurs both in Ade's and Brook's version...
-    h = sgtitle(['x = NFkB activation at start. Threshold = ',num2str(start_thresh)]);
+    ranksmult(ktr(keep,:),start_lvl); %ranksmult is function stored under utilities, uses ktr matrix and the start level for each cell as input 
+    h = sgtitle(['x = KTR activation at start. Threshold = ',num2str(start_thresh)]);
     set(h,'FontSize',14)
-    ranksmult(nfkb(keep,:),nuc_lvl);
-    %h = suptitle(['x = Nuclear stain level. Threshold = ',num2str(nuc_thresh)]);
+    ranksmult(ktr(keep,:),nuc_lvl);
     h = sgtitle(['x = Nuclear stain level. Threshold = ',num2str(nuc_thresh)]);
     set(h,'FontSize',14)
-    ranksmult(nfkb(keep,:),nanmedian(measure.Area(keep,:),2));
-    %h = suptitle(['x = Median area. Threshold = ',num2str(area_thresh)]);
+    ranksmult(ktr(keep,:),nanmedian(measure.Area(keep,:),2));
     h = sgtitle(['x = Median area. Threshold = ',num2str(area_thresh)]);
     set(h,'FontSize',14)
 
 end
 
 info.keep = max(droprows,[],2) == 0;
-nfkb = nfkb(info.keep,:); %nfkb is redefined as only the not-filtered-out cells (?)
+ktr = ktr(info.keep,:); %ktr is redefined as only the not-filtered-out cells (?)
 
 %% Initialize outputs, do final corrections
 graph.celldata = info.CellData(info.keep,:); %graph.celldata is set to include celldata from all the non-filtered out cells
 
 % Correct for XY positions that activate late
-[graph.var, shift_xy] = alignTrajectories(nfkb, graph.celldata, 60, max_shift); %calls subfunction alignTrajectories for nfkb, using celldata, 60 as a window to calculate pairwise distances (???), and maximum shift user determined (or default 1 in this function; subfunction sets default to 3)
+%? double check what happens in align Trajectories funciton for KTR
+[graph.var, shift_xy] = alignTrajectories(ktr, graph.celldata, 60, max_shift); %calls subfunction alignTrajectories for ktr, using celldata, 60 as a window to calculate pairwise distances (???), and maximum shift user determined (or default 1 in this function; subfunction sets default to 3)
 % this part doesn't run ever, since dendro is set to 0 above and no comparison occurs after 'if'???
 % in Ade's version the if dendro part is commented out, but what is the ordering happening after else?
 % when the else part is commented out, there's no graph.order, so the code doesn't run --> how does Ade's version run?
@@ -263,12 +273,11 @@ if verbose_flag
     end
 end
 
-%I do not understand this part yet?
 graph.shift = shift_xy; %gets the xy shift from alignTrajectories function
 graph.t = 0:(1/info.parameters.FramesPerHour):48; %creates a time axis vector for the graph from 0 to 48 in steps of 1/FramesperHour (12) %?why
 graph.t = graph.t(1:min([length(graph.t),size(graph.var,2)]));%time axis vector shortened to number of timepoints in data (if shorter)
-graph.opt = maketicks(graph.t,info.GraphLimits,0); %calls function to add tick labels to time frame (?only partially understand what that does)
-graph.opt.Name = 'NFkB Activation'; 
+graph.opt = maketicks(graph.t,info.graph_limits,0); %calls function to add tick labels to time frame (?only partially understand what that does)
+graph.opt.Name = 'kinase Activation'; 
 
 
 %% Graphing

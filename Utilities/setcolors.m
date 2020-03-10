@@ -5,6 +5,14 @@ function [colors] = setcolors(graph_flag)
 % graph_flag    (optional) if true, show colors on heatmap
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
+%Stefanie's colors
+colors.dark_blue = [0,0,139]/255;
+colors.sky_blue =[135,206,250]/255;
+colors.turquoise = [64,224,208]/255;
+colors.orange2 = [255,165,0]/255;
+colors.light_red =[240,128,128]/255;
+colors.dark_red = [178,34,34]/255;
+
 % W-qbio theme - used darker variants of these for info theory (Selimkhanov, Science 2014)
 colors.blue = [62 107 133]/255;
 colors.green = [0 195 169]/255;
