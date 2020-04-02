@@ -15,8 +15,6 @@ function [CellMeasurements, ModuleData] = ktrModule(CellMeasurements,parameters,
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 % Use annulus to estimate cytoplasmic area.
-% by dilating nucleus by a factor of the minimum nuclear radius given in
-% parameters and using C++ function to generate cell labels
 tmp_mask = imdilate(labels.Nucleus>0,diskstrel(parameters.MinNucleusRadius*1.25));
 labels.Cell = IdentifySecPropagateSubfunction(double(labels.Nucleus),zeros(size(labels.Nucleus)),tmp_mask,100);
 
@@ -54,13 +52,13 @@ for i = 1:length(AuxImages)
             if ~isempty(nuc_cc.PixelIdxList{n})
                 % (Median of nuclear and cytoplasmic compartments)
                 median_n = median(AuxImages{i}(nuc_cc.PixelIdxList{n}));
-                median_n(median_n==0) = NaN; % change 0 to NaN
+                median_n(median_n==0) = NaN; % 20200401 test trying to change 0 back to NaN
                 median_c = median(AuxImages{i}(cyto_cc.PixelIdxList{n}));
-                median_c(median_c==0) = NaN; %  change 0 to NaN
+                median_c(median_c==0) = NaN; % 20200401 test trying to change 0 back to NaN
                 % Assign measurements
                 CellMeasurements.(['KTR_nuc',num2str(i)])(n,ModuleData.iter) = median_n;
                 CellMeasurements.(['KTR_cyto',num2str(i)])(n,ModuleData.iter) = median_c;
-                CellMeasurements.(['KTR_ratio',num2str(i)])(n,ModuleData.iter) = median_c/median_n;
+                CellMeasurements.(['KTR_ratio_blub',num2str(i)])(n,ModuleData.iter) = median_c/median_n;
             end 
         end 
     end

@@ -58,7 +58,9 @@ table_data(sum(cellfun(@isempty,table_data),2)==size(table_data,2),:) = [];
 
 
 % Get IDs and pull out corresponding rows
+%ids = cellfun(@str2num,table_data(2:end,strcmpi(table_data(1,:),'#')), 'UniformOutput', false); 
 ids = cellfun(@str2num,table_data(2:end,strcmpi(table_data(1,:),'#'))); 
+
 % cellfun applies function to each cells in cell array, converts string to
 % number of the google sheet (all rows except 1st, in the column called #
 % (search all columns in row 1 for #)

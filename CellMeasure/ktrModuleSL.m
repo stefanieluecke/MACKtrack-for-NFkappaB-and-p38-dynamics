@@ -1,5 +1,7 @@
 function [CellMeasurements, ModuleDataOut] = ktrModuleSL(CellMeasurements,parameters, labels, AuxImages, ModuleData)
 
+%
+%2020331 SL: I think this can be deleted, intermediate test of sth
 % NOT USED YET! TESTING (testing sth, maybe comparing to NFKB module, I
 % don't remember...)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

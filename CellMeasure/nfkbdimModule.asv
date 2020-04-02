@@ -60,8 +60,8 @@ cells(cells==0) = [];
 
 tmp_mask = imdilate(labels.Nucleus>0,diskstrel(parameters.MinNucleusRadius*1.25));
 labels.Cell_annu = labels.Cell;
-labels.Cell_annu = IdentifySecPropagateSubfunction(double(labels.Nucleus),zeros(size(labels.Nucleus)),tmp_mask,100);
-labels.Cell_annu = uint16(labels.Cell_annu);
+labels.Cell_annu = IdentifySecPropagateSubfunction(double(labels.Nucleus),zeros(size(labels.Nucleus)),tmp_mask,100)
+labels.Cell_annu = uint16(labels.Cell
 
 % Cycle through each image and assign measurements
 for i = 1:length(cells)
@@ -89,8 +89,8 @@ for i = 1:length(cells)
     CellMeasurements.NFkBdim_Nuclear(cells(i),ModuleData.iter) = a;
     CellMeasurements.NFkBdim_Nuclear_erode(cells(i),ModuleData.iter) = a_erode;
     CellMeasurements.NFkBdim_Cyto_full(cells(i),ModuleData.iter) = b;
-    CellMeasurements.NFkBdim_Cyto_annu(cells(i),ModuleData.iter) = c;
-    CellMeasurements.NFkBdim_Ratio(cells(i),ModuleData.iter) = a/c;
+    CellMeasurement.NFkBdim_Cyto_annu(cells(i),ModuleData.iter) = c;
+    CellMeasurement.NFkBdim_Ratio(cells(i),ModuleData.iter) = a/c;
     
 end
 
