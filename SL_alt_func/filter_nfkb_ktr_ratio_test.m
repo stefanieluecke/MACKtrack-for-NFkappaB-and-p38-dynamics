@@ -83,7 +83,7 @@ info.GraphLimitsNFkB = p.Results.GraphLimitsNFkB; % Min/max used in graphing
 info.GraphLimitsKTR = p.Results.GraphLimitsKTR; % Min/max used in graphing
 info.OnThreshNFkB = p.Results.OnThreshNFkB;
 info.OnThreshKTR = p.Results.OnThreshKTR;
-baseline_length_nfkb = size(measure.NFkBdimNuclear,2); % Endframe for baseline calculation (use entire vector), baseline length is the size of the rows, i.e. number of timepoints 
+baseline_length_nfkb = size(measure.NFkBdim_Nuclear,2); % Endframe for baseline calculation (use entire vector), baseline length is the size of the rows, i.e. number of timepoints 
 baseline_length_ktr = size(measure.KTR_ratio1,2); 
 
 %% Filtering
@@ -91,14 +91,15 @@ robuststd = @(distr, cutoff) nanstd(distr(distr < (nanmedian(distr)+cutoff*nanst
 
 % Filtering, part 1 cell fate and cytoplasmic intensity
 droprows = []; %creates an empty matrix/array?
-droprows = [droprows, sum(isnan(measure.NFkBdimNuclear(:,1:4)),2)>2]; % Use only cells existing @ expt start %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 2 NaN values in nuclear NFkB levels within first 4 timepoints
-droprows = [droprows, sum(isnan(measure.NFkBdimNuclear(:,1:MinLifetime)),2)>3]; % Use only long-lived cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 3 NaN values in nuclear NFkB levels within minimum lifetime
-droprows = [droprows, sum(measure.NFkBdimCytoplasm(:,1:4)==0,2)>0]; % Very dim cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 0 nfkb cytoplasmic values in first four timepoints that are equal to 0
+droprows = [droprows, sum(isnan(measure.NFkBdim_Nuclear(:,1:4)),2)>2]; % Use only cells existing @ expt start %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 2 NaN values in nuclear NFkB levels within first 4 timepoints
+droprows = [droprows, sum(isnan(measure.NFkBdim_Nuclear(:,1:MinLifetime)),2)>3]; % Use only long-lived cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 3 NaN values in nuclear NFkB levels within minimum lifetime
+%this may need to be adjusted to cyto annu? or keep using full
+droprows = [droprows, sum(measure.NFkBdim_Cyto_full(:,1:4)==0,2)>0]; % Very dim cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 0 nfkb cytoplasmic values in first four timepoints that are equal to 0
 %?? add a filter to remove cells with dim KTR nucleus?
 %droprows = [droprows, info.CellData(:,end)]; % Non-edge cells
 
 % NFkB normalization - subtract baseline for each cell (either starting ?% value or 4th percentile of smoothed trajectory)%?whatever is smaller?
-nfkb = measure.NFkBdimNuclear(:,:); %nfkb is defined as NFkB nuclear measurement from NFkBdim module
+nfkb = measure.NFkBdim_Nuclear(:,:); %nfkb is defined as NFkB nuclear measurement from NFkBdim module
 
 %191114 testing differnt versions of baseline
 
@@ -127,6 +128,14 @@ nfkb = nfkb - repmat(nfkb_baseline,1,size(nfkb,2)); %nfkb is re-defined as nfkb 
 nfkb(nfkb<0) = 0;
 %}
 
+%{
+%Testing NFkB baseline, simply deducting mean of first 13 timepoints
+nfkb_baseline = nanmean([nfkb(:,1:13)],2); %baseline is determined from 1st to 13nth timepoint 
+    %? parametrize later on
+nfkb =  nfkb - nfkb_baseline; % ktr activity is defined as baseline - fluorescence measurement
+%}
+
+
 
 if verbose_flag
     figure, imagesc(nfkb,prctile(nfkb(:),[5,99])),colormap(parula), colorbar %plots raw baseline-subttracted trajectories, using 5th and 99th percentile of nfkb as limits
@@ -139,7 +148,7 @@ nfkb = nfkb/mean(info.parameters.adj_distr_NFkBdim(2,:)); %nfkb is re-defined of
 % KTR normalization - subtract baseline for each cell (either starting ?% value or 4th percentile of smoothed trajectory)%?whatever is smaller?
 %ktr = measure.KTR_ratio1(:,:); %ktr is defined as KTR cytoplasmic/nuclear ratio from ktr module
 % 11-22-19 testing ktr_cyto_ann module output for ratio?
-ktr = measure.KTR_ann_ratio1(:, :);
+ktr = measure.KTR_ratio1(:, :);
 
 % test 101619 test alternative ways of presenting KTR_nuc 
 
@@ -153,14 +162,14 @@ ktr(ktr<0) = 0;
 %}
 
 %test delta(nuclear KTR to baseline) without setting <0 to 0
-%
+%{
 ktr_baseline = nanmean([ktr(:,1:13)],2); %baseline is determined from 1st to 13nth timepoint 
     %? parametrize later on
 ktr =  ktr - ktr_baseline; % ktr activity is defined as baseline - fluorescence measurement
 %}
 
 %test older baseline 
-%{
+%
 ktr_smooth = nan(size(ktr)); %NaN array of same size as ktr is created, for created smoothed trajectory
 for i = 1:size(ktr,1)
     ktr_smooth(i,~isnan(ktr(i,:))) = medfilt1(ktr(i,~isnan(ktr(i,:))),3); %replaces every element in ktr_smooth that is not NaN in corresponding ktr position with a 3rd order median filtered version %?whatever that means...

@@ -102,7 +102,7 @@ try
     % Load NFkB measurement (unimodal background) for endogenous NFkB images
     %test 191114
     %elseif isfield(AllMeasurements, 'NFkBdimNuclear') %parameterize this to add ktr
-    if isfield(AllMeasurements, 'NFkBdimNuclear') %parameterize this to add ktr
+    if isfield(AllMeasurements, 'NFkBdim_Nuclear') %parameterize this to add ktr
        % 12/06/19 temp remove this if statement to re-save info on google sheet to parameters file
         if ~isfield(p, 'adj_distr_NFkBdim')
             disp('Measuring and saving initial (flatfield-corrected) image distributions')

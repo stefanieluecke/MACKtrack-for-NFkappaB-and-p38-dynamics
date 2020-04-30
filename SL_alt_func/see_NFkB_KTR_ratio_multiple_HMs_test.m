@@ -40,7 +40,7 @@ addParameter (p, 'OnThreshNFkB', 0, @isnumeric); %? not used in code?
 addParameter (p, 'GraphLimitsNFkB',[-0.25 8],@isnumeric);
 addParameter(p,'StartThreshKTR',1800, valid_conv); %max allowable starting threshhold to filter out cells with pre-activated KTR, default is 0.6
 addParameter (p, 'OnThreshKTR', 0, @isnumeric);%? not used in code?
-addParameter (p, 'GraphLimitsKTR',[0 500],@isnumeric);
+addParameter (p, 'GraphLimitsKTR',[-0.02 0.25],@isnumeric);
 addParameter(p, 'SortMetric', 'peakfreq_nfkb');
 expectedOrder = {'ascend', 'descend'};
 addParameter(p, 'SortOrder', 'descend', @(x)any(validatestring(x, expectedOrder))); 

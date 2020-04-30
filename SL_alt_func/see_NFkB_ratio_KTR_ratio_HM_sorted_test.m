@@ -1,6 +1,6 @@
 function [] = see_NFkB_KTR_ratio_HM_sorted_test(id, varargin)
 
-
+%test visualizing both NFkB and KTR as ratios
 %% INPUT PARSING
 % Create input parser object, add required params from function input
 p = inputParser;
@@ -19,10 +19,8 @@ addParameter(p,'MinLifetime',117, @isnumeric); %allows adjustment of minimum lif
 addParameter(p,'MinSize',90, valid_conv); %allows adjustment of minimum size (?)
 addParameter(p,'TrimFrame',157, @isnumeric);
 addParameter(p,'StartThreshNFkB',2, valid_conv); %max allowable starting threshhold to filter out cells with pre-activated NFkB, default is 2
-% 20200407 test SL
-addParameter (p, 'OnThreshNFkB', 2, @isnumeric); %? not used in code?
-%addParameter (p, 'OnThreshNFkB', 0, @isnumeric); %? not used in code?
-addParameter (p, 'GraphLimitsNFkB',[-0.25 6],@isnumeric);
+addParameter (p, 'OnThreshNFkB', 0, @isnumeric); %? not used in code?
+addParameter (p, 'GraphLimitsNFkB',[-0.05 1],@isnumeric);
 addParameter(p,'StartThreshKTR',0.6, valid_conv); %max allowable starting threshhold to filter out cells with pre-activated KTR, default is 0.6
 addParameter (p, 'OnThreshKTR', 0, @isnumeric);%? not used in code?
 addParameter (p, 'GraphLimitsKTR',[-0.05 0.3],@isnumeric);
@@ -33,7 +31,7 @@ addParameter(p, 'StartTimePoint', 13, @isnumeric)
 
 parse(p,id, varargin{:})
 %%
-[metrics,aux, graph, info, measure] = nfkb_ktr_ratio_metrics_test(id, 'MinLifetime',p.Results.MinLifetime,...
+[metrics,aux, graph, info, measure] = nfkb_ratio_ktr_ratio_metrics_test(id, 'MinLifetime',p.Results.MinLifetime,...
                             'ConvectionShift',p.Results.ConvectionShift, 'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
                             'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
                             p.Results.Verbose, 'GraphLimitsNFkB', p.Results.GraphLimitsNFkB,'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'TrimFrame', p.Results.TrimFrame, 'StartTimePoint', p.Results.StartTimePoint);
