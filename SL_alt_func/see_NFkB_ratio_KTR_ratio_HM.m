@@ -1,4 +1,4 @@
-function [] = see_NFkB_KTR_ratio_HM_sorted_test(id, varargin)
+function [] = see_NFkB_KTR_ratio_HM(id, varargin)
 
 %test visualizing both NFkB and KTR as ratios
 %% INPUT PARSING
@@ -31,7 +31,7 @@ addParameter(p, 'StartTimePoint', 13, @isnumeric)
 
 parse(p,id, varargin{:})
 %%
-[metrics,aux, graph, info, measure] = nfkb_ratio_ktr_ratio_metrics_test(id, 'MinLifetime',p.Results.MinLifetime,...
+[metrics,aux, graph, info, measure] = nfkb_ratio_ktr_ratio_metrics(id, 'MinLifetime',p.Results.MinLifetime,...
                             'ConvectionShift',p.Results.ConvectionShift, 'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
                             'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
                             p.Results.Verbose, 'GraphLimitsNFkB', p.Results.GraphLimitsNFkB,'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'TrimFrame', p.Results.TrimFrame, 'StartTimePoint', p.Results.StartTimePoint);

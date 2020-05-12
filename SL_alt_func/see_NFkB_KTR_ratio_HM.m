@@ -1,4 +1,4 @@
-function [] = see_NFkB_KTR_ratio_HM_sorted_test(id, varargin)
+function [graph, info, measure, metrics] = see_NFkB_KTR_ratio_HM(id, varargin)
 
 
 %% INPUT PARSING
@@ -15,28 +15,27 @@ addParameter(p,'Verbose','on', @(x) any(validatestring(x,expectedFlags)));%check
 valid_conv = @(x) assert(isnumeric(x)&&(x>=0)&&(length(x)==1),...
     'Parameter must be single integer >= 0'); %checks whether parameters below are single integers
 addParameter(p,'ConvectionShift',1, valid_conv); %allows adjustment of convection shift (?)
-addParameter(p,'MinLifetime',117, @isnumeric); %allows adjustment of minimum lifetime (?)
+addParameter(p,'MinLifetime',109, @isnumeric); %allows adjustment of minimum lifetime (?)
 addParameter(p,'MinSize',90, valid_conv); %allows adjustment of minimum size (?)
 addParameter(p,'TrimFrame',157, @isnumeric);
 addParameter(p,'StartThreshNFkB',2, valid_conv); %max allowable starting threshhold to filter out cells with pre-activated NFkB, default is 2
 % 20200407 test SL
 addParameter (p, 'OnThreshNFkB', 2, @isnumeric); %? not used in code?
-%addParameter (p, 'OnThreshNFkB', 0, @isnumeric); %? not used in code?
 addParameter (p, 'GraphLimitsNFkB',[-0.25 6],@isnumeric);
-addParameter(p,'StartThreshKTR',0.6, valid_conv); %max allowable starting threshhold to filter out cells with pre-activated KTR, default is 0.6
-addParameter (p, 'OnThreshKTR', 0, @isnumeric);%? not used in code?
+addParameter(p,'StartThreshKTR',1, valid_conv); %max allowable starting threshhold to filter out cells with pre-activated KTR, default is 0.6
+%addParameter (p, 'OnThreshKTR', 0, @isnumeric);%? not used in code?
 addParameter (p, 'GraphLimitsKTR',[-0.05 0.3],@isnumeric);
 addParameter(p, 'SortMetric', 'peakfreq_nfkb');
 expectedOrder = {'ascend', 'descend'};
 addParameter(p, 'SortOrder', 'descend', @(x)any(validatestring(x, expectedOrder))); 
-addParameter(p, 'StartTimePoint', 13, @isnumeric)
+addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
 
 parse(p,id, varargin{:})
 %%
-[metrics,aux, graph, info, measure] = nfkb_ktr_ratio_metrics_test(id, 'MinLifetime',p.Results.MinLifetime,...
+[metrics,aux, graph, info, measure] = nfkb_ktr_ratio_metrics(id, 'MinLifetime',p.Results.MinLifetime,...
                             'ConvectionShift',p.Results.ConvectionShift, 'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
                             'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
-                            p.Results.Verbose, 'GraphLimitsNFkB', p.Results.GraphLimitsNFkB,'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'TrimFrame', p.Results.TrimFrame, 'StartTimePoint', p.Results.StartTimePoint);
+                            p.Results.Verbose, 'GraphLimitsNFkB', p.Results.GraphLimitsNFkB,'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'TrimFrame', p.Results.TrimFrame, 'StimulationTimePoint', p.Results.StimulationTimePoint);
 
 SortMetric = p.Results.SortMetric;
 [~,graph.order] = sort(metrics.(SortMetric), p.Results.SortOrder);
@@ -58,11 +57,11 @@ colormapStack(graph.var_ktr(graph.order,:),graph.celldata(graph.order,:), graph.
 
 figs.b = figure('name','Heatmap_KTR');
 set(figs.b,'Position', [500 400 400 600])
-colormapStack(graph.var_ktr(graph.order,:),graph.celldata(graph.order,:), graph.opt_ktr); %calls subfunction that makes figure    
+colormapStack(graph.var_ktr_baseline_deducted(graph.order,:),graph.celldata(graph.order,:), graph.opt_ktr); %calls subfunction that makes figure    
 
 figs.e = figure('name', 'Heatmaps_NFkB_KTR');
 set(figs.e,'Position', [500 400 1000 600])
-colormapStack_double(graph.var_nfkb(graph.order,:), graph.var_ktr(graph.order,:),graph.celldata(graph.order,:), graph.opt_nfkb, graph.opt_ktr);
+colormapStack_double(graph.var_nfkb(graph.order,:), graph.var_ktr_baseline_deducted(graph.order,:),graph.celldata(graph.order,:), graph.opt_nfkb, graph.opt_ktr);
 
 %{
 % try with subplot 
@@ -103,11 +102,11 @@ copyobj(allchild(get(figs.b,'CurrentAxes')),j(2));
     axis([min(graph.opt_nfkb.Times) max(graph.opt_nfkb.Times) graph.opt_nfkb.MeasurementBounds]) %sets axis to determined timescale and determined measurement bounds, derived from maketicks function
 
     subplot(2,1,2);
-    graph.line.top = nanmean(graph.var_ktr) + nanstd(graph.var_ktr); %creates upper bound
-    graph.line.bot = nanmean(graph.var_ktr) - nanstd(graph.var_ktr); %creates lower bound
+    graph.line.top = nanmean(graph.var_ktr_baseline_deducted) + nanstd(graph.var_ktr_baseline_deducted); %creates upper bound
+    graph.line.bot = nanmean(graph.var_ktr_baseline_deducted) - nanstd(graph.var_ktr_baseline_deducted); %creates lower bound
     fill([graph.t,graph.t(end:-1:1)],[graph.line.top,graph.line.bot(end:-1:1)],colors.light_blue) %creates filled polygon determined by time axis and upper and lower bound
     hold on
-    graph.line.main = plot(graph.t, nanmean(graph.var_ktr)); %adds the mean to the figure
+    graph.line.main = plot(graph.t, nanmean(graph.var_ktr_baseline_deducted)); %adds the mean to the figure
     set(graph.line.main,'Color',[.25 .25 .25],'LineWidth',2); %determined properties of the mean line
     hold off
     set(gca,'XTick',graph.opt_ktr.TimeTicks,'YTick',graph.opt_ktr.MeasurementTicks) %sets axis tick properites
@@ -151,12 +150,12 @@ axis([min(graph.opt_nfkb.Times) max(graph.opt_nfkb.Times) graph.opt_nfkb.Measure
             
     end
 % Line plot KTR (mean+/-std)
-    graph.line.top = nanmean(graph.var_ktr) + nanstd(graph.var_ktr); %creates upper bound
-    graph.line.bot = nanmean(graph.var_ktr) - nanstd(graph.var_ktr); %creates lower bound
+    graph.line.top = nanmean(graph.var_ktr_baseline_deducted) + nanstd(graph.var_ktr_baseline_deducted); %creates upper bound
+    graph.line.bot = nanmean(graph.var_ktr_baseline_deducted) - nanstd(graph.var_ktr_baseline_deducted); %creates lower bound
     figs.c = figure('name','MeanTrajectoryKTR'); %creates figure and names it
     fill([graph.t,graph.t(end:-1:1)],[graph.line.top,graph.line.bot(end:-1:1)],colors.light_blue) %creates filled polygon determined by time axis and upper and lower bound
     hold on
-    graph.line.main = plot(graph.t, nanmean(graph.var_ktr)); %adds the mean to the figure
+    graph.line.main = plot(graph.t, nanmean(graph.var_ktr_baseline_deducted)); %adds the mean to the figure
     set(graph.line.main,'Color',[.25 .25 .25],'LineWidth',2); %determined properties of the mean line
     hold off
     set(gca,'XTick',graph.opt_ktr.TimeTicks,'YTick',graph.opt_ktr.MeasurementTicks) %sets axis tick properites
@@ -166,16 +165,17 @@ axis([min(graph.opt_nfkb.Times) max(graph.opt_nfkb.Times) graph.opt_nfkb.Measure
     xlabel('Time (h)','FontSize',14);
     axis([min(graph.opt_ktr.Times) max(graph.opt_ktr.Times) graph.opt_ktr.MeasurementBounds]) %sets axis to determined timescale and determined measurement bounds, derived from maketicks function
 
-% Small multiples line graph KTR
+%todo decide whether to use ktr or ktr_baseline_deducted for this 
+%Small multiples line graph KTR
     figs.d  = figure('name','smallmultiplesKTR');
     set(figs.d,'Position',[500, 350, 876, 1000]);
-    graph.smult.order = randperm(size(graph.var_ktr,1),min([60 size(graph.var_ktr,1)])); %order the plots randomly (vector of max 60 or number of cells random integers between 1 and the number of cells)
+    graph.smult.order = randperm(size(graph.var_ktr_baseline_deducted,1),min([60 size(graph.var_ktr_baseline_deducted,1)])); %order the plots randomly (vector of max 60 or number of cells random integers between 1 and the number of cells)
     graph.smult.h = tight_subplot(15,4); %creates 15x4 small subplots using function
     xpos = max(graph.opt_ktr.Times)-0.48*(max(graph.opt_ktr.Times)-min(graph.opt_ktr.Times)); %determines the positioning of text within each small graph
     ypos =  max(graph.opt_ktr.MeasurementBounds) - 0.26*diff(graph.opt_ktr.MeasurementBounds); %determines the positioning of text within each small graph
     for i =1:length(graph.smult.order)
         %plot(graph.smult.h(i),graph.t,graph.var(graph.smult.order(i),:),'Color',colors.grays{3}, 'LineWidth',2)
-        plot(graph.smult.h(i),graph.t,graph.var_ktr(graph.smult.order(i),:),'Color',colors.red, 'LineWidth',2)
+        plot(graph.smult.h(i),graph.t,graph.var_ktr_baseline_deducted(graph.smult.order(i),:),'Color',colors.red, 'LineWidth',2)
         set(graph.smult.h(i),'XLim',[min(graph.opt_ktr.Times)-(range(graph.opt_ktr.Times)*0.02) max(graph.opt_ktr.Times)],...
             'YLim',graph.opt_ktr.MeasurementBounds,'XTickLabel',{},'YTickLabel',{})
         text(xpos,ypos,['XY ',num2str(graph.celldata(graph.smult.order(i),1)),...

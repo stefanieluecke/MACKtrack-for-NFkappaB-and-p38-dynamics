@@ -1,4 +1,4 @@
-function [metrics,aux, graph, info, measure] = nfkb_ratio_ktr_ratio_metrics_test(id,varargin)
+function [metrics,aux, graph, info, measure] = nfkb_ktr_ratio_metrics(id,varargin)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 % metrics = nfkb_ktr_metrics(id)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -34,8 +34,8 @@ valid_id = @(x) assert((isnumeric(x)&&length(x)==1)||exist(x,'file'),...
     'ID input must be spreadsheet ID or full file path');
 addRequired(p,'id',valid_id);
 % Optional parameters
-addParameter (p, 'OnThreshNFkB', 2, @isnumeric);
-addParameter (p, 'OnThreshKTR', 2, @isnumeric);
+%addParameter (p, 'OnThreshNFkB', 2, @isnumeric);
+%addParameter (p, 'OnThreshKTR', 2, @isnumeric);
 addParameter(p, 'StartThreshNFkB', 10, @isnumeric); 
 addParameter(p,'StartThreshKTR',8, @isnumeric);
 addParameter(p, 'MinSize', 90, @isnumeric); 
@@ -48,7 +48,7 @@ addParameter(p,'Verbose','off', @(x) any(validatestring(x,expectedFlags)))
 valid_conv = @(x) assert(isnumeric(x)&&(x>=0)&&(length(x)==1),...
     'Convection correction parameter must be single integer >= 0');
 addParameter(p,'ConvectionShift',1, valid_conv);
-addParameter(p, 'StartTimePoint', 13, @isnumeric)
+addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
 
 parse(p,id, varargin{:})
 
@@ -81,11 +81,11 @@ ConvectionShift = p.Results.ConvectionShift;
 
 
 %? double check all parameter passing through makes sense, esp baseline!
-[graph, info, measure] = filter_nfkb_ratio_ktr_ratio_test(id,'MinLifetime',MinLifetime,...
+[graph, info, measure] = filter_nfkb_ktr_ratio(id,'MinLifetime',MinLifetime,...
                             'ConvectionShift',ConvectionShift, 'OnThreshNFkB',OnThreshNFkB,...
                             'OnThreshKTR',OnThreshKTR,'MinSize', MinSize,'StartThreshNFkB',...
                             StartThreshNFkB,'StartThreshKTR', StartThreshKTR, 'Verbose', p.Results.Verbose,...
-                            'GraphLimitsNFkB', p.Results.GraphLimitsNFkB, 'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'StartTimePoint', p.Results.StartTimePoint);
+                            'GraphLimitsNFkB', p.Results.GraphLimitsNFkB, 'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'StimulationTimePoint', p.Results.StimulationTimePoint);
    
 graph.var_nfkb = graph.var_nfkb(:,1:min(p.Results.TrimFrame, size(graph.var_nfkb,2)));
 graph.var_ktr = graph.var_ktr(:,1:min(p.Results.TrimFrame, size(graph.var_ktr,2)));
@@ -320,6 +320,7 @@ for i = 1:length(aux.thresholds)
 end
 %% KTR METRICS
 %% BASIC KTR METRICS: TIME SERIES, DERIVATIVE, INTEGRAL
+%{
 % 1) basic time series. Interpolate over "normal" interval (12 frames per hr) if required
 t = min(graph.t):1/12:max(graph.t);
 if length(t)~=length(graph.t)
@@ -329,6 +330,18 @@ if length(t)~=length(graph.t)
     end
 else
     metrics.time_series_ktr = graph.var_ktr;
+end
+%}
+% todo for now: use baseline deducted KTR for this, FIX later
+% 1) basic time series. Interpolate over "normal" interval (12 frames per hr) if required
+t = min(graph.t):1/12:max(graph.t);
+if length(t)~=length(graph.t)
+    metrics.time_series_ktr = nan(size(graph.var_ktr,1),length(t));
+    for i = 1:size(graph.var_ktr,1)
+        metrics.time_series_ktr(i,:) = interp1(graph.t,graph.var_ktr_baseline_deducted(i,:),t);
+    end
+else
+    metrics.time_series_ktr = graph.var_ktr_baseline_deducted;
 end
 
 % 2) integrated activity
