@@ -190,11 +190,10 @@ Wliml = StimulationTimePoint+1; %first/lower time point of window to check for a
 Wlimu = StimulationTimePoint + 48; %last/upper time point of window to check for activity, ie check in the first 4 hours after stimulation
 blockLengthThresh = 5; %number of consecutive frames cell needs to pass activity threshold to be considered a responder
 baseline_stdv_nfkb = nanstd(metrics.time_series_nfkb(:,1:StimulationTimePoint),0,2);
-%NFkBBySigma = (metrics.time_series_nfkb(:,Wliml:Wlimu))./baseline_stdv_nfkb;
+NFkBBySigma = (metrics.time_series_nfkb(:,Wliml:Wlimu))./baseline_stdv_nfkb;
 %try using smoothed rows for this determination
-NFkBBySigma = (smoothed(:,Wliml:Wlimu))./baseline_stdv_nfkb;
-block_length_readout = zeros(size(NFkBBySigma,1),100);
-block_length_readout(:,:) = 111;
+%NFkBBySigma = (smoothed(:,Wliml:Wlimu))./baseline_stdv_nfkb;
+block_length = 
 for jj = 1:size(NFkBBySigma,1)
             thresh_idx = diff(NFkBBySigma(jj,:)>OnThreshNFkB,1,2);
             thresh_start = find(thresh_idx == 1);
@@ -223,7 +222,6 @@ for jj = 1:size(NFkBBySigma,1)
                     block_length = 0;
             end 
             metrics.responder_index_nfkb(jj,1) = any(block_length>=blockLengthThresh, 2);
-            block_length_readout(jj, 1:numel(block_length)) = block_length;
 end
 %todo write this into another function      
 metrics.responders_fraction_nfkb = nnz(metrics.responder_index_nfkb)/numel(metrics.responder_index_nfkb);
@@ -338,7 +336,7 @@ metrics.off_times_nfkb(metrics.off_times_nfkb<0) = 0;
 metrics.off_times_nfkb = zeros(size(smoothed,1),1);
 inactive = [repmat(nanmin(smoothed(:,1:7),[],2),1,window_sz*2+1),smoothed(:,:),...
     repmat(nanmedian(smoothed(:,(end-window_sz:end)),2),1,window_sz*2)];% creates matrix of min of first couple of TP, repeated 14*2+1 times, all the smoothed rows, and the median of the last 14 rows repeated 14*2 times
-% the folliwng somehow 'magically' converts all the numbers that are
+% ? the folliwng somehow 'magically' converts all the numbers that are
 % below the activation threshold into a percent inactive, ie 0 is 100% inactive, more active cells are fraction of that
 % this happens using a smoothing moving average, but I do not understand how this works?
 inactive = smoothrows(inactive<(OnThreshNFkB),(window_sz*2));%smoothes again only those lower than threshold with BIG smoothing window
@@ -562,7 +560,6 @@ for i = 1:(max_hr)
 end
 
 %% MAX/MIN metrics
-%todo check if relative max amplitude (to baseline) is informative
 metrics.max_amplitude_ktr = nanmax(metrics.time_series_ktr(:,StimulationTimePoint:end),[],2);
 metrics.max_integral_ktr = nanmax(metrics.integrals_ktr(:,StimulationTimePoint:end),[],2);
 metrics.max_derivative_ktr = nanmax(metrics.derivatives_ktr(:,StimulationTimePoint:end),[],2);
@@ -609,7 +606,7 @@ end
 %todo write this into another function      
 metrics.responders_fraction_ktr = nnz(metrics.responder_index_ktr)/numel(metrics.responder_index_ktr);
 
-%determine activity
+
 metrics.off_times_ktr = zeros(size(smoothed,1),1);
 inactive = [repmat(nanmin(smoothed(:,1:7),[],2),1,window_sz*2+1),smoothed(:,:),...
     repmat(nanmedian(smoothed(:,(end-window_sz:end)),2),1,window_sz*2)];

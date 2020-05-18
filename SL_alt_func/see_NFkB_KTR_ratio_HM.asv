@@ -154,7 +154,7 @@ axis([min(graph.opt_nfkb.Times) max(graph.opt_nfkb.Times) graph.opt_nfkb.Measure
     figs.c = figure('name','MeanTrajectoryKTR'); %creates figure and names it
     fill([graph.t,graph.t(end:-1:1)],[graph.line.top,graph.line.bot(end:-1:1)],colors.light_blue) %creates filled polygon determined by time axis and upper and lower bound
     hold on
-    graph.line.main = plot(graph.t, nanmean(graph.var_ktr)); %adds the mean to the figure
+    graph.line.main = plot(graph.t, nanmean(graph.var_ktr_baseline_deducted)); %adds the mean to the figure
     set(graph.line.main,'Color',[.25 .25 .25],'LineWidth',2); %determined properties of the mean line
     hold off
     set(gca,'XTick',graph.opt_ktr.TimeTicks,'YTick',graph.opt_ktr.MeasurementTicks) %sets axis tick properites
@@ -168,13 +168,13 @@ axis([min(graph.opt_nfkb.Times) max(graph.opt_nfkb.Times) graph.opt_nfkb.Measure
 %Small multiples line graph KTR
     figs.d  = figure('name','smallmultiplesKTR');
     set(figs.d,'Position',[500, 350, 876, 1000]);
-    graph.smult.order = randperm(size(graph.var_ktr,1),min([60 size(graph.var_ktr,1)])); %order the plots randomly (vector of max 60 or number of cells random integers between 1 and the number of cells)
+    graph.smult.order = randperm(size(graph.var_ktr_baseline_deducted,1),min([60 size(graph.var_ktr_baseline_deducted,1)])); %order the plots randomly (vector of max 60 or number of cells random integers between 1 and the number of cells)
     graph.smult.h = tight_subplot(15,4); %creates 15x4 small subplots using function
     xpos = max(graph.opt_ktr.Times)-0.48*(max(graph.opt_ktr.Times)-min(graph.opt_ktr.Times)); %determines the positioning of text within each small graph
     ypos =  max(graph.opt_ktr.MeasurementBounds) - 0.26*diff(graph.opt_ktr.MeasurementBounds); %determines the positioning of text within each small graph
     for i =1:length(graph.smult.order)
         %plot(graph.smult.h(i),graph.t,graph.var(graph.smult.order(i),:),'Color',colors.grays{3}, 'LineWidth',2)
-        plot(graph.smult.h(i),graph.t,graph.var_ktr(graph.smult.order(i),:),'Color',colors.red, 'LineWidth',2)
+        plot(graph.smult.h(i),graph.t,graph.var_ktr_baseline_deducted(graph.smult.order(i),:),'Color',colors.red, 'LineWidth',2)
         set(graph.smult.h(i),'XLim',[min(graph.opt_ktr.Times)-(range(graph.opt_ktr.Times)*0.02) max(graph.opt_ktr.Times)],...
             'YLim',graph.opt_ktr.MeasurementBounds,'XTickLabel',{},'YTickLabel',{})
         text(xpos,ypos,['XY ',num2str(graph.celldata(graph.smult.order(i),1)),...
