@@ -20,21 +20,23 @@ addParameter(p,'MinSize',90, valid_conv); %allows adjustment of minimum size (?)
 addParameter(p,'TrimFrame',157, @isnumeric);
 addParameter(p,'StartThreshNFkB',14, valid_conv);  %max allowable starting threshhold (before baseline deduction)to filter out cells with pre-activated NFkB
 addParameter (p, 'OnThreshNFkB', 3, @isnumeric); %sigma threshold for determining responders
-addParameter (p, 'GraphLimitsNFkB',[-0.25 6],@isnumeric);
+addParameter (p, 'GraphLimitsNFkB',[-0.25 7],@isnumeric);
 addParameter(p,'StartThreshKTR',0.9, valid_conv); %max allowable starting threshhold to filter out cells with pre-activated KTR, default is 0.6
 addParameter (p, 'OnThreshKTR', 3, @isnumeric); %sigma threshold for determining responders
-addParameter (p, 'GraphLimitsKTR',[-0.0,0.4],@isnumeric);
+addParameter (p, 'GraphLimitsKTR',[-0.02,0.35],@isnumeric);
 addParameter(p, 'SortMetric', 'peakfreq_nfkb');
 expectedOrder = {'ascend', 'descend'};
 addParameter(p, 'SortOrder', 'descend', @(x)any(validatestring(x, expectedOrder))); 
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
+addParameter(p, 'FramesPerHour', 12, @isnumeric)
 
 parse(p,id, varargin{:})
 %%
 [metrics,aux, graph, info, measure] = nfkb_ktr_ratio_metrics(id, 'MinLifetime',p.Results.MinLifetime,...
                             'ConvectionShift',p.Results.ConvectionShift, 'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
                             'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
-                            p.Results.Verbose, 'GraphLimitsNFkB', p.Results.GraphLimitsNFkB,'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'TrimFrame', p.Results.TrimFrame, 'StimulationTimePoint', p.Results.StimulationTimePoint);
+                            p.Results.Verbose, 'GraphLimitsNFkB', p.Results.GraphLimitsNFkB,'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'TrimFrame', p.Results.TrimFrame, ...
+                            'StimulationTimePoint', p.Results.StimulationTimePoint, 'FramesPerHour', p.Results.FramesPerHour);
 
 SortMetric = p.Results.SortMetric;
 [~,graph.order] = sort(metrics.(SortMetric), p.Results.SortOrder);

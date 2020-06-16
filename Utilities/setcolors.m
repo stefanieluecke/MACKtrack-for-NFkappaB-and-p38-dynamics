@@ -13,6 +13,24 @@ colors.orange2 = [255,165,0]/255;
 colors.light_red =[240,128,128]/255;
 colors.dark_red = [178,34,34]/255;
 
+%Stefanie's colors as scheme, darker
+colors.dosesDarker{1} = [0,0,139].*0.65/255;
+colors.dosesDarker{2}=[135,206,250].*0.65/255;
+colors.dosesDarker{3} = [64,224,208].*0.65/255;
+colors.dosesDarker{4}= [255,165,0].*0.65/255;
+colors.dosesDarker{5} =[240,128,128].*0.65/255;
+colors.dosesDarker{6} = [178,34,34].*0.65/255;
+
+%Stefanie's colors as scheme
+colors.doses{1} = [0,0,139]/255;
+colors.doses{2}=[135,206,250]/255;
+colors.doses{3} = [64,224,208]/255;
+colors.doses{4}= [255,165,0]/255;
+colors.doses{5} =[240,128,128]/255;
+colors.doses{6} = [178,34,34]/255;
+
+
+
 % W-qbio theme - used darker variants of these for info theory (Selimkhanov, Science 2014)
 colors.blue = [62 107 133]/255;
 colors.green = [0 195 169]/255;

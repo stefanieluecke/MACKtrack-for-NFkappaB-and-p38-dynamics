@@ -36,11 +36,11 @@ addParameter(p,'MinLifetime',109, @isnumeric); %allows adjustment of minimum lif
 addParameter(p,'MinSize',90, valid_conv); %allows adjustment of minimum size (?)
 addParameter(p,'TrimFrame',157, @isnumeric);
 addParameter(p,'StartThreshNFkB',14, valid_conv);%max allowable starting threshhold (before baseline deduction)to filter out cells with pre-activated NFkB
-addParameter (p, 'OnThreshNFkB', 1, @isnumeric); %sigma threshold for determining responders
-addParameter (p, 'GraphLimitsNFkB',[-0.25 8],@isnumeric);
+addParameter (p, 'OnThreshNFkB', 3, @isnumeric); %sigma threshold for determining responders
+addParameter (p, 'GraphLimitsNFkB',[-0.25 7],@isnumeric);
 addParameter(p,'StartThreshKTR',0.9, valid_conv); %max allowable starting threshhold to filter out cells with pre-activated KTR, default is 0.6
-addParameter (p, 'OnThreshKTR', 1, @isnumeric); %sigma threshold for determining responders
-addParameter (p, 'GraphLimitsKTR',[-0.0,0.4],@isnumeric);
+addParameter (p, 'OnThreshKTR', 3, @isnumeric); %sigma threshold for determining responders
+addParameter (p, 'GraphLimitsKTR',[-0.02,0.35],@isnumeric);
 addParameter(p, 'SortMetric', 'peakfreq_nfkb');
 expectedOrder = {'ascend', 'descend'};
 addParameter(p, 'SortOrder', 'descend', @(x)any(validatestring(x, expectedOrder))); 
@@ -154,17 +154,17 @@ SortMetric = p.Results.SortMetric;
 [~,graph6.order] = sort(metrics6.(SortMetric), p.Results.SortOrder);
 
 % Heatmap
-HMinput1 = struct('var_nfkb_sorted',graph1.var_nfkb(graph1.order,:), 'var_ktr_sorted', graph1.var_ktr_baseline_deducted(graph1.order,:),...
+HMinput1 = struct('var_nfkb_sorted',graph1.var_nfkb(graph1.order,:), 'var_ktr_sorted', graph1.var_ktr(graph1.order,:),...
     'celldata',graph1.celldata(graph1.order,:), 'opt_nfkb', graph1.opt_nfkb, 'opt_ktr', graph1.opt_ktr, 'title', info1.name);
-HMinput2 = struct('var_nfkb_sorted',graph2.var_nfkb(graph2.order,:), 'var_ktr_sorted', graph2.var_ktr_baseline_deducted(graph2.order,:),...
+HMinput2 = struct('var_nfkb_sorted',graph2.var_nfkb(graph2.order,:), 'var_ktr_sorted', graph2.var_ktr(graph2.order,:),...
     'celldata',graph2.celldata(graph2.order,:), 'opt_nfkb', graph2.opt_nfkb, 'opt_ktr', graph2.opt_ktr, 'title', info2.name);
-HMinput3 = struct('var_nfkb_sorted',graph3.var_nfkb(graph3.order,:), 'var_ktr_sorted', graph3.var_ktr_baseline_deducted(graph3.order,:),...
+HMinput3 = struct('var_nfkb_sorted',graph3.var_nfkb(graph3.order,:), 'var_ktr_sorted', graph3.var_ktr(graph3.order,:),...
     'celldata',graph3.celldata(graph3.order,:), 'opt_nfkb', graph3.opt_nfkb, 'opt_ktr', graph3.opt_ktr, 'title', info3.name);
-HMinput4 = struct('var_nfkb_sorted',graph4.var_nfkb(graph4.order,:), 'var_ktr_sorted', graph4.var_ktr_baseline_deducted(graph4.order,:),...
+HMinput4 = struct('var_nfkb_sorted',graph4.var_nfkb(graph4.order,:), 'var_ktr_sorted', graph4.var_ktr(graph4.order,:),...
     'celldata',graph4.celldata(graph4.order,:), 'opt_nfkb', graph4.opt_nfkb, 'opt_ktr', graph4.opt_ktr, 'title', info4.name);
-HMinput5 = struct('var_nfkb_sorted',graph5.var_nfkb(graph5.order,:), 'var_ktr_sorted', graph5.var_ktr_baseline_deducted(graph5.order,:),...
+HMinput5 = struct('var_nfkb_sorted',graph5.var_nfkb(graph5.order,:), 'var_ktr_sorted', graph5.var_ktr(graph5.order,:),...
     'celldata',graph5.celldata(graph5.order,:), 'opt_nfkb', graph5.opt_nfkb, 'opt_ktr', graph5.opt_ktr, 'title', info5.name);
-HMinput6 = struct('var_nfkb_sorted',graph6.var_nfkb(graph6.order,:), 'var_ktr_sorted', graph6.var_ktr_baseline_deducted(graph6.order,:),...
+HMinput6 = struct('var_nfkb_sorted',graph6.var_nfkb(graph6.order,:), 'var_ktr_sorted', graph6.var_ktr(graph6.order,:),...
     'celldata',graph6.celldata(graph6.order,:), 'opt_nfkb', graph6.opt_nfkb, 'opt_ktr', graph6.opt_ktr, 'title', info6.name);
 
 
@@ -185,11 +185,11 @@ end
 
 %Heatmaps NFkB plots next to each other
 figs.f = figure('name', 'Multiple_Heatmaps_NFkB');
-set(figs.f,'Position', [50 100 1800 500])
+set(figs.f,'Position', [50 100 1800 400])
 colormapStack_multiple_NFkB(HMinput1,HMinput2,HMinput3,HMinput4,HMinput5,HMinput6);
 
 
 %Heatmaps KTR plots next to each other
 figs.f = figure('name', 'Multiple_Heatmaps_KTR');
-set(figs.f,'Position', [50 100 1800 500])
+set(figs.f,'Position', [50 100 1800 400])
 colormapStack_multiple_KTR(HMinput1,HMinput2,HMinput3,HMinput4,HMinput5,HMinput6);

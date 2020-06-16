@@ -126,7 +126,7 @@ nfkb = nfkb - repmat(nfkb_baseline,1,size(nfkb,2)); %nfkb is re-defined as nfkb 
 %
 %NFkB baseline deduction, simply deducting mean of unstimulated timepoints per cell
 if strcmpi(p.Results.NFkBBaselineDeduction,'on')
-    nfkb_baseline = nanmean([nfkb(:,1:StimulationTimePoint)],2); %baseline is determined from 1st to 13nth timepoint 
+    nfkb_baseline = nanmean(nfkb(:,1:StimulationTimePoint),2); %baseline is determined from 1st to 13nth timepoint 
     nfkb_no_base_ded = nfkb;    
     nfkb =  nfkb - nfkb_baseline; % ktr activity is defined as baseline - fluorescence measurement
 end 
@@ -144,7 +144,7 @@ ktr = measure.KTR_ratio1(:,:); %ktr is defined as KTR cytoplasmic/nuclear ratio 
 
 %KTR baseline deduction --> baseline deduction is appropriate only for some
 %metrics --> pass along both
-ktr_baseline = nanmean([ktr(:,1:StimulationTimePoint)],2); %baseline is determined from 1st to 13nth timepoint 
+ktr_baseline = nanmean(ktr(:,1:StimulationTimePoint),2); %baseline is determined from 1st to 13nth timepoint 
     %? parametrize later on
 ktr_no_base_ded =  ktr; % ktr activity is defined as baseline - fluorescence measurement
 ktr =  ktr - ktr_baseline; % ktr activity is defined as baseline - fluorescence measurement

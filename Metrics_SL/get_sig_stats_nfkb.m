@@ -1,0 +1,91 @@
+function sig_stats = get_sig_stats_nfkb(time_series, StimulationTimePoint, varargin)
+
+%todo adjust to timeframe!!!
+
+%extraFeats =convertCharsToStrings({'power', 'medfreq', 'meanfreq', 'psd', 'noise_est', 'max_pentropy'})';
+%is_valid_stat=@(x) all(ismember(x, [string(get_sig_stat_list()); extraFeats])); 
+valid_FillMethod  = {'previous', 'next','linear', 'spline', 'pchip'};
+isvalidfill =@(x)ismember (x, valid_FillMethod);
+p=inputParser;
+addRequired(p, 'time_series',@isnumeric);
+addRequired(p, 'StimulationTimePoint',@isnumeric);
+addParameter(p, 'FqRange',[0.33 1] , @isnumeric);
+addParameter(p, 'Fs',12, @isnumeric);
+addParameter(p, 'FillMethod','linear', isvalidfill);
+%addParameter(p, 'Stats', ["peak2peak", "peak2rms","obw","bandpower"],is_valid_stat);
+%addParameter(p, 'SmoothMethod',["sgolay", "lowess"], @istext);
+
+parse(p,time_series,StimulationTimePoint, varargin{:});
+
+sig_stats=struct; 
+
+time_series_mod = time_series(:,StimulationTimePoint:end);
+time_series_mod = fillmissing(time_series_mod,p.Results.FillMethod, 2, 'EndValues','extrap');
+%todo carefully check smoothing function, Ade uses different smoothing funciton not foudn in his Github, likelz not simple mov average
+smoothData = smoothrows(time_series_mod,3); 
+
+%todo is Fs the same as frames per hour, if so use my parametrization
+Fs=p.Results.Fs; freq_range =p.Results.FqRange;
+
+sig_stats.medfreq_nfkb      = medfreq(smoothData', Fs,freq_range)';
+sig_stats.meanfreq_nfkb     = meanfreq(smoothData', Fs, freq_range)'; 
+sig_stats.peak2rms_nfkb     =peak2rms(smoothData,2);     
+sig_stats.rms_nfkb          =rms(smoothData')';
+sig_stats.peak2peak_nfkb    = peak2peak(smoothData,2);
+sig_stats.mean_movmad_nfkb  =mean( movmad(smoothData,3,2),2);
+sig_stats.mean_movstd       =mean( movstd(smoothData,3,[],2),2);
+sig_stats.mean_movvar       =mean( movvar(smoothData,3,[],2),2);
+  
+%psd = power spectral density, also called power in Ade's metrics
+%todo!! FIX power is actually sth different, with 'power' instead of 'psd'
+%as spectrumtype input to pwelch... fix!
+    %[~, sig_stats.(stat)]=pwelch(Data',[],[],[],Fs,'one-sided','power');
+    %[pwr, fq] = periodogram(smoothData',[], [], Fs, 'power');      
+    n = size(time_series_mod,2); 
+    [pwr,fq]=pwelch(smoothData',n,10,256,Fs,'one-sided','psd');
+%    [pwr,fq]=pwelch(smoothData',n,10,256,Fs,'one-sided',stat);
+    sig_stats.fq_nfkb       =fq';
+    %normalize power/psd to 1
+sig_stats.psd_nfkb      =transpose(pwr./sum(pwr,1));
+            
+%oscpower, also referred to bandpower
+    pwr = transpose(sig_stats.psd_nfkb) ; fq = transpose(sig_stats.fq_nfkb);% 
+    %todo see if freq_range etc need any adjustments esp for KTR
+    bp= bandpower(pwr,fq,freq_range, 'psd')';
+sig_stats.oscpower_nfkb =bp;
+
+%oscillation frequency
+    %find peaks within the frequency range
+    bandfilter= @(x) x<= max(freq_range) & x>= min(freq_range);normalize =@(x) x/sum(x);
+    ix =bandfilter(sig_stats.fq_nfkb);
+    peakFun =@(a) arrayfun(@(j) findpeaks(a(j,:), sig_stats.fq_nfkb(ix),...
+                    'SortStr', 'descend', 'MinPeakProminence', 0.0055), 1:size(a,1), 'UniformOutput',false);
+    [peaks,locs] = peakFun(sig_stats.psd_nfkb(:,ix)) ; %peaks = psd, locs = frequency
+    freq =zeros(size(peaks)); 
+        for j = 1:numel(peaks)
+            if numel(peaks{j}) > 1
+            % more than one peak within the range, take weighted
+            % sum of frequency 
+                wgts = normalize(peaks{j}); 
+                freq(j) = sum(locs{j}.*wgts); 
+            elseif ~isempty(peaks{j})
+                freq(j) = locs{j}; 
+            end
+        end
+sig_stats.oscfreq_nfkb = freq';
+            
+            
+sig_stats.oscbandwidth_nfkb     =obw(smoothData',Fs)';
+
+%max entropy
+    max_entropy= zeros(size(smoothData,1),1);    
+    time_pts = max_entropy;
+
+        for j =1:numel(max_entropy)
+          [sig_entropy, tp]= pentropy(smoothData(j,:), Fs/3600,'FrequencyLimit',freq_range./3600);   
+           [max_entropy(j), ix] = max(sig_entropy);
+           time_pts(j) = tp(ix)/3600;
+        end
+sig_stats.max_entropy_nfkb = max_entropy; 
+
+sig_stats.noise_est_nfkb =  wnoisest(time_series)';

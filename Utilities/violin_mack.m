@@ -37,14 +37,17 @@ addRequired(p,'places',valid_places);
 
 % Optional parameters
 colors = setcolors;
-default_color = colors.peacock(end:-1:1);
+%default_color = colors.peacock(end:-1:1);
+default_color = colors.doses;
 
 valid_color = @(x) assert(iscell(x)&&length(x{1})==3, 'Specify colors with a cell matrix of RGB triplets');
 addParameter(p,'Color', default_color,valid_color);
+%addParameter(p,'Color', default_color);
 
 all = cell2mat(vects(:));
 valid_ylim = @(x) assert(length(x)==2,'YLim must be a 2 element vector');
 addParameter(p,'YLim', prctile(all(:),[2 98]),valid_ylim);
+%addParameter(p,'YLim', prctile(all(:),[1 99]),valid_ylim);
 expectedFlags = {'on','off'};
 addParameter(p,'ShowBins','off', @(x) any(validatestring(x,expectedFlags)));
 addParameter(p,'Area',0.01,@isnumeric);
@@ -70,7 +73,8 @@ colors = p.Results.Color;
 
 % Create figure (if axes wasn't provided)
 if ~ishandle(p.Results.Axes)
-    viofig = figure('Position', [500, 1031, 800, 300], 'PaperPositionMode','auto');
+%    viofig = figure('Position', [500, 1031, 800, 300], 'PaperPositionMode','auto');
+     viofig = figure('PaperPositionMode','auto');
     violin = axes('Parent',viofig);
 else
     violin = p.Results.Axes;
