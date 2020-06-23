@@ -88,4 +88,4 @@ sig_stats.oscbandwidth_nfkb     =obw(smoothData',Fs)';
         end
 sig_stats.max_entropy_nfkb = max_entropy; 
 
-sig_stats.noise_est_nfkb =  wnoisest(time_series)';
+sig_stats.noise_est_nfkb =  wnoisest(time_series_mod)';

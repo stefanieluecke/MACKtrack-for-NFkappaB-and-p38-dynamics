@@ -371,7 +371,10 @@ metrics.pk1_amp_nfkb =  nan(size(metrics.time_series_nfkb,1),1);
 metrics.pk2_time_nfkb = nan(size(metrics.time_series_nfkb,1),1);
 metrics.pk2_amp_nfkb =  nan(size(metrics.time_series_nfkb,1),1);
 for i = 1:size(metrics.pk1_time_nfkb,1)    
-    [pks, locs] = globalpeaks(metrics.time_series_nfkb(i,1:min([90,p.Results.MinLifetime])),5);
+  %  [pks, locs] =
+  %  globalpeaks(metrics.time_series_nfkb(i,1:min([90,p.Results.MinLifetime])),5);
+  %  %20200617 test to include more peaks because of more filtering
+    [pks, locs] = globalpeaks(metrics.time_series_nfkb(i,1:min([90,p.Results.MinLifetime])),20);
     % Supress any peaks that are within 6 frames of each other.
     [locs, order] = sort(locs,'ascend');
     pks = pks(order);
@@ -387,7 +390,15 @@ for i = 1:size(metrics.pk1_time_nfkb,1)
 %    locs(locs<(StimulationTimePoint + 3)) = [];
 %    pks(locs<4) = [];
 %    locs(locs<4) = [];
-    if ~isempty(locs)
+
+% 20200617 Testing to remove peaks with values below 0
+%todo test this
+    locs(pks<= 0) = [];
+    pks(pks<= 0) = []; %pks needs to be filtered after locs
+ 
+
+%todo include what to do if it is empty, or if pks is empty
+   if ~isempty(locs)
         metrics.pk1_time_nfkb(i) = locs(1);
         metrics.pk1_amp_nfkb(i) = pks(1);
     end
@@ -770,6 +781,13 @@ for i = 1:size(metrics.pk1_time_ktr,1)
 %    locs(locs<(StimulationTimePoint + 3)) = [];
 %    pks(locs<4) = [];
 %    locs(locs<4) = [];
+
+% 20200617 Testing to remove peaks with values below 0
+%todo test this
+%todo inlcude this in KTR section too
+    locs(pks<= 0) = [];
+    pks(pks<= 0) = []; %pks needs to be filtered after locs
+    
     if ~isempty(locs)
         metrics.pk1_time_ktr(i) = locs(1);
         metrics.pk1_amp_ktr(i) = pks(1);
