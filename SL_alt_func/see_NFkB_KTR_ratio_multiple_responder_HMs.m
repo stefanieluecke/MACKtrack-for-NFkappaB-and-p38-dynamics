@@ -1,4 +1,4 @@
-function [] = see_NFkB_KTR_ratio_multiple_HMs(IDs, varargin)
+function [] = see_NFkB_KTR_ratio_multiple_responder_HMs(IDs, varargin)
 
 % 
 %Enter highest responder first
@@ -50,11 +50,29 @@ end
 
 SortMetric = p.Results.SortMetric;
 for i = 1:n
-    ID(i).graph.sort_metric =   ID(i).metrics.(SortMetric);  
-    ID(i).graph.opt_nfkb.title = ID(i).info.name;
-    ID(i).graph.opt_ktr.title = ID(i).info.name;
+    ID(i).graph.sort_metric =   ID(i).metrics.(SortMetric);
 end 
 
+for i = 1:n
+    baseline_stdv_nfkb = nanstd(ID(i).metrics.time_series_nfkb(:,1:p.Results.StimulationTimePoint),0,2);
+    ID(i).graph.NFkBBySigma = ID(i).graph.var_nfkb./baseline_stdv_nfkb;
+    baseline_stdv_ktr = nanstd(ID(i).metrics.time_series_ktr(:,1:p.Results.StimulationTimePoint),0,2);
+    ID(i).graph.ktrBySigma = ID(i).graph.var_ktr./baseline_stdv_ktr;
+end
+
+
+
+for i = 1:n
+    ID(i).graph.responder_status = zeros(size(ID(i).graph.var_nfkb)); 
+    ID(i).graph.responder_status(ID(i).graph.ktrBySigma < 3 &  ID(i).graph.NFkBBySigma < 3) = 1;
+    ID(i).graph.responder_status(ID(i).graph.ktrBySigma >= 3 &  ID(i).graph.NFkBBySigma >= 3) = 2;
+    ID(i).graph.responder_status(ID(i).graph.ktrBySigma >= 3 &  ID(i).graph.NFkBBySigma < 3) = 3;
+    ID(i).graph.responder_status(ID(i).graph.ktrBySigma < 3 &  ID(i).graph.NFkBBySigma >= 3) = 4;
+
+     varNames = {'non-resp.', 'dual resp.', 'ktr only', 'nfkb only'};
+
+    % ID(i).graph.responder_status = categorical(ID(i).graph.responder_status,1:4, varNames); 
+end 
 %% Filter required graph data based on NFkB and KTR responder status
 switch p.Results.FilterResponders 
     case 'nfkb'
@@ -63,6 +81,7 @@ switch p.Results.FilterResponders
            ID(i).graph.var_ktr      = ID(i).graph.var_ktr(ID(i).metrics.responder_index_nfkb == 1,:);
            ID(i).graph.celldata     = ID(i).graph.celldata(ID(i).metrics.responder_index_nfkb == 1,:);
            ID(i).graph.sort_metric  = ID(i).graph.sort_metric(ID(i).metrics.responder_index_nfkb == 1,:);
+            ID(i).graph.responder_status =  ID(i).graph.responder_status(ID(i).metrics.responder_index_nfkb == 1,:);
         end
     case 'ktr'
         for i = 1:n
@@ -70,6 +89,7 @@ switch p.Results.FilterResponders
            ID(i).graph.var_ktr      = ID(i).graph.var_ktr(ID(i).metrics.responder_index_ktr == 1,:);
            ID(i).graph.celldata     = ID(i).graph.celldata(ID(i).metrics.responder_index_ktr == 1,:);
            ID(i).graph.sort_metric  = ID(i).graph.sort_metric(ID(i).metrics.responder_index_ktr == 1,:);
+            ID(i).graph.responder_status = ID(i).graph.responder_status(ID(i).metrics.responder_index_ktr == 1,:);
         end
     case 'both'
         for i = 1:n
@@ -77,6 +97,7 @@ switch p.Results.FilterResponders
            ID(i).graph.var_ktr      = ID(i).graph.var_ktr((ID(i).metrics.responder_index_nfkb == 1      & ID(i).metrics.responder_index_ktr == 1),:);
            ID(i).graph.celldata     = ID(i).graph.celldata((ID(i).metrics.responder_index_nfkb == 1     & ID(i).metrics.responder_index_ktr == 1),:);
            ID(i).graph.sort_metric  = ID(i).graph.sort_metric((ID(i).metrics.responder_index_nfkb == 1  & ID(i).metrics.responder_index_ktr == 1),:);
+            ID(i).graph.responder_status = ID(i).graph.responder_status((ID(i).metrics.responder_index_nfkb == 1  & ID(i).metrics.responder_index_ktr == 1),:); 
         end
 end
 
@@ -89,16 +110,17 @@ end
 figs.a = figure('name', 'HMs NFkB+KTR');
 set(figs.a,'Position', [500 400 1000 600])
 fig_handle = gcf;
-tiledlayout(2,n)
+tiledlayout(1,n)
 
 for i= 1:n
+    ID(i).graph.opt_respHM = ID(i).graph.opt_nfkb;
+    ID(i).graph.opt_respHM.MeasurementBounds = [1,4];
+    ID(i).graph.opt_respHM.MeasurementTicks = [1,2,3,4];
+    ID(i).graph.opt_respHM.MeasurementTickLabels = varNames;
+    ID(i).graph.opt_respHM.Name = 'Responder Status';
+    ID(i).graph.opt_respHM.title = ID(i).info.name;
     axes.ax(i) = nexttile;
-    colormapStack_for_tiled(ID(i).graph.var_nfkb(ID(i).graph.order,:),ID(i).graph.celldata(ID(i).graph.order,:), ID(i).graph.opt_nfkb, fig_handle, axes.ax(i)); %calls subfunction that makes figure    
-end
-
-for i= 1:n
-    axes.ax(i+n) = nexttile;
-    colormapStack_for_tiled(ID(i).graph.var_ktr(ID(i).graph.order,:),ID(i).graph.celldata(ID(i).graph.order,:), ID(i).graph.opt_ktr, fig_handle,axes.ax(i+n)); %calls subfunction that makes figure    
+    colormapStack_for_responder(ID(i).graph.responder_status(ID(i).graph.order,:),ID(i).graph.celldata(ID(i).graph.order,:), ID(i).graph.opt_respHM, fig_handle, axes.ax(i)); %calls subfunction that makes figure    
 end
 
 

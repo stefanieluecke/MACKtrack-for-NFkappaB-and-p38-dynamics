@@ -30,7 +30,15 @@ addParameter(p, 'SortOrder', 'descend', @(x)any(validatestring(x, expectedOrder)
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
 addParameter(p, 'FramesPerHour', 12, @isnumeric)
 
+
+expectedFilters = {'none','nfkb', 'ktr', 'both'};
+addParameter(p, 'FilterResponders','none', @(x) any(validatestring(x,expectedFilters)));%filter out non-responders or not
+
+
 parse(p,id, varargin{:})
+
+
+
 %%
 [metrics,aux, graph, info, measure] = nfkb_ktr_ratio_metrics(id, 'MinLifetime',p.Results.MinLifetime,...
                             'ConvectionShift',p.Results.ConvectionShift, 'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
@@ -38,23 +46,39 @@ parse(p,id, varargin{:})
                             p.Results.Verbose, 'GraphLimitsNFkB', p.Results.GraphLimitsNFkB,'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'TrimFrame', p.Results.TrimFrame, ...
                             'StimulationTimePoint', p.Results.StimulationTimePoint, 'FramesPerHour', p.Results.FramesPerHour);
 
-SortMetric = p.Results.SortMetric;
-[~,graph.order] = sort(metrics.(SortMetric), p.Results.SortOrder);
 
+SortMetric = p.Results.SortMetric;
+graph.sort_metric =   metrics.(SortMetric);                      
+                        
+%% Filter based on responder status
+
+switch p.Results.FilterResponders 
+    case 'nfkb'
+           graph.var_nfkb = graph.var_nfkb(metrics.responder_index_nfkb == 1,:);
+           graph.var_ktr = graph.var_ktr(metrics.responder_index_nfkb == 1,:);
+           graph.celldata = graph.celldata(metrics.responder_index_nfkb == 1,:);
+           graph.sort_metric  = graph.sort_metric(metrics.responder_index_nfkb == 1,:);
+    case 'ktr'
+           graph.var_nfkb = graph.var_nfkb(metrics.responder_index_ktr == 1,:);
+           graph.var_ktr = graph.var_ktr(metrics.responder_index_ktr == 1,:);
+           graph.celldata = graph.celldata(metrics.responder_index_ktr == 1,:);
+           graph.sort_metric = graph.sort_metric(metrics.responder_index_ktr == 1,:);
+    case 'both'
+           graph.var_nfkb = graph.var_nfkb((metrics.responder_index_nfkb == 1 & metrics.responder_index_ktr == 1),:);
+           graph.var_ktr = graph.var_ktr((metrics.responder_index_nfkb == 1 & metrics.responder_index_ktr == 1),:);
+           graph.celldata = graph.celldata((metrics.responder_index_nfkb == 1 & metrics.responder_index_ktr == 1),:);
+           graph.sort_metric = graph.sort_metric((metrics.responder_index_nfkb == 1 & metrics.responder_index_ktr == 1),:);
+end
+
+%% Determine order based on SortMetric
+
+[~,graph.order] = sort(graph.sort_metric, p.Results.SortOrder);
+
+%% Graphing 
 % Heatmap
 figs.a = figure('name','Heatmap_NFkB');
 set(figs.a,'Position', [500 7 400 600])
 colormapStack(graph.var_nfkb(graph.order,:),graph.celldata(graph.order,:), graph.opt_nfkb); %calls subfunction that makes figure    
-
-%{
-%attempt to place both into one graph
-pos1 = [300 700 400 600];
-subplot('Position', pos1)
-colormapStack(graph.var_nfkb(graph.order,:),graph.celldata(graph.order,:), graph.opt_nfkb); %calls subfunction that makes figure    
-pos2 = [1300 70 400 600];
-subplot('Position', pos2)
-colormapStack(graph.var_ktr(graph.order,:),graph.celldata(graph.order,:), graph.opt_ktr); %calls subfunction that makes figure    
-%}
 
 figs.b = figure('name','Heatmap_KTR');
 set(figs.b,'Position', [500 400 400 600])
@@ -63,21 +87,6 @@ colormapStack(graph.var_ktr(graph.order,:),graph.celldata(graph.order,:), graph.
 figs.e = figure('name', 'Heatmaps_NFkB_KTR');
 set(figs.e,'Position', [500 400 1000 600])
 colormapStack_double(graph.var_nfkb(graph.order,:), graph.var_ktr(graph.order,:),graph.celldata(graph.order,:), graph.opt_nfkb, graph.opt_ktr);
-
-%{
-% try with subplot 
-j(1)=subplot(1,2,1);
-j(2)=subplot(1,2,2);
-% Paste figures on the subplots
-
-copyobj(allchild(get(figs.a,'CurrentAxes')), j(1));
-copyobj(allchild(get(figs.b,'CurrentAxes')),j(2));
-
-%copyobj(h1,j(1));
-%copyobj(h2,j(2));
-%copyobj(allchild(get(h1,'CurrentAxes')),j(1));
-%copyobj(allchild(get(h2,'CurrentAxes')),j(2));
-%}
 
 %add in line plot of averages and small multiple plots
     colors = setcolors;    
@@ -127,7 +136,6 @@ graph.line.main = plot(graph.t, nanmean(graph.var_nfkb)); %adds the mean to the 
 set(graph.line.main,'Color',[.25 .25 .25],'LineWidth',2); %determined properties of the mean line
 hold off
 set(gca,'XTick',graph.opt_nfkb.TimeTicks,'YTick',graph.opt_nfkb.MeasurementTicks) %sets axis tick properites
-%set(gca,'YTickLabel',graph.opt_nfkb.MeasurementTickLabels,'TickLength',[0.005 0.005]) %sets tick label properties
 set(gca,'YTickLabel',graph.opt_nfkb.MeasurementTickLabels,'TickLength',[0.005 0.005]) %sets tick label properties
 ylabel('NFkB activation', 'FontSize', 14);
 xlabel('Time (h)','FontSize',14);

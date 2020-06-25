@@ -174,6 +174,7 @@ for j = 1:length(FeatureList)
                 features.(featName)     = get_max_pk1_speed(metrics.pk1_time_ktr, metrics.derivatives_ktr, FramesPerHour, StimulationTimePoint);
             case {'osc_cats_nfkb'}
                  features.(featName)    =  get_osc_cats(metrics.peakfreq_nfkb,metrics.off_times_nfkb,'cutoff_fq', 0.42);
+%todo find proper frequency threshold for KTR
             case {'osc_cats_ktr'}
                  features.(featName)    =  get_osc_cats(metrics.peakfreq_ktr,metrics.off_times_ktr,'cutoff_fq', 0.42);
            
