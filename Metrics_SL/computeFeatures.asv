@@ -1,4 +1,4 @@
-function [features, metrics]= computeFeatures(id, varargin)
+function [features, metrics, info, graph]= computeFeatures(id, varargin)
 
 %function that takes experimental ID number and computes features (optionally given 'FeatureList' table) 
 %from basic metrics function and additional functions
@@ -31,14 +31,12 @@ addParameter(p, 'FramesPerHour', 12, @isnumeric)
 
 % Optional parameters to be passed used in computeFeature function
 addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
-addParameter(p, 'FeatureListTable', []);
-addParameter(p, 'metrics', []);
+addParameter(p, 'FeatureListTable');
 
 parse(p,id, varargin{:})
 
 StimulationTimePoint = p.Results.StimulationTimePoint; 
 FramesPerHour = p.Results.FramesPerHour;
-
 %%
 %get list of features to be calculated
 FeatureListFile = p.Results.FeatureListFile;
@@ -58,16 +56,13 @@ SignalStatsList = table2cell(SignalStatsTable(:,1));
 
 
 %% call function for basic metrics
-if isempty(p.Results.metrics)
-    metrics = nfkb_ktr_ratio_metrics(id, 'MinLifetime',p.Results.MinLifetime,...
-                                'ConvectionShift',p.Results.ConvectionShift, 'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
-                                'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
-                                p.Results.Verbose, 'TrimFrame', p.Results.TrimFrame, ...
-                                'StimulationTimePoint', p.Results.StimulationTimePoint, 'FramesPerHour', p.Results.FramesPerHour);
+[metrics,aux, graph, info, measure] = nfkb_ktr_ratio_metrics(id, 'MinLifetime',p.Results.MinLifetime,...
+                            'ConvectionShift',p.Results.ConvectionShift, 'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
+                            'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
+                            p.Results.Verbose, 'TrimFrame', p.Results.TrimFrame, ...
+                            'StimulationTimePoint', p.Results.StimulationTimePoint, 'FramesPerHour', p.Results.FramesPerHour);
 
-else
-    metrics = p.Results.metrics;
-end
+
 %todo call funcitons providing multiple metrics (eg get_peak_stat_list), (if they are requried by Feature List)
 % so they're only called once
 %todo adjust these inputs to my own fuctions

@@ -30,26 +30,26 @@ addParameter(p, 'FilterResponders','none', @(x) any(validatestring(x,expectedFil
 
 parse(p,IDs, varargin{:})
 
-ViolMetTableNFkB = readtable(p.Results.FeatureListFile, 'Sheet', 'ViolMetTableNFkB');
-viol_met_nfkb = table2cell(ViolMetTableNFkB(:,1)); %list of metrics/features to be plotted
-viol_met_index_nfkb = table2cell(ViolMetTableNFkB(:,2)); %index for metrics with multiple columns (eg duration, etc.)
-ViolMetTableKTR= readtable(p.Results.FeatureListFile, 'Sheet', 'ViolMetTableKTR');
-viol_met_ktr = table2cell(ViolMetTableKTR(:,1)); %list of metrics/features to be plotted
-viol_met_index_ktr = table2cell(ViolMetTableKTR(:,2)); %index for metrics with multiple columns (eg duration, etc.)
-
-%viol_met_nfkb = {'off_times_nfkb','max_amplitude_nfkb','max_integral_nfkb','pk1_amp_nfkb', 'pk2_amp_nfkb','peakfreq_nfkb','max_derivative_nfkb', 'min_derivative_nfkb', 'pk1_time_nfkb', 'pk2_time_nfkb'};
-%viol_met_ktr = {'off_times_ktr','max_amplitude_ktr','max_integral_ktr','pk1_amp_ktr', 'pk2_amp_ktr','peakfreq_ktr','max_derivative_ktr', 'min_derivative_ktr', 'pk1_time_ktr', 'pk2_time_ktr'};
+%run metrics function of desired exp ID
 
 n = numel(IDs);
 ID(n).metrics = [];
 ID(n).graph = [];
 ID(n).info = [];
 
+ViolMetTableNFkB = readtable(p.Results.FeatureListFile, 'Sheet', 'ViolMetTableNFkB');
+viol_met_nfkb = table2cell(ViolMetTableNFkB(:,1));
+viol_met_index_nfkb = table2cell(ViolMetTableNFkB(:,2)); %index for metrics with multiple columns (eg duration, etc.)
+ViolMetTableKTR= readtable(p.Results.FeatureListFile, 'Sheet', 'ViolMetTableKTR');
+viol_met_ktr = table2cell(ViolMetTableKTR(:,1));
+viol_met_index_ktr = table2cell(ViolMetTableKTR(:,2)); %index for metrics with multiple columns (eg duration, etc.)
+
+% Metrics for NFkB
+%viol_met_nfkb = {'off_times_nfkb','max_amplitude_nfkb','max_integral_nfkb','pk1_amp_nfkb', 'pk2_amp_nfkb','peakfreq_nfkb','max_derivative_nfkb', 'min_derivative_nfkb', 'pk1_time_nfkb', 'pk2_time_nfkb'};
+
 figure
 tiledlayout(4,round(numel(viol_met_nfkb)/2)) %looks best when using even number of metrics/features
 
-% Metrics for NFkB
-%run metrics function of desired exp ID
 for i= 1:n
     [ID(i).metrics,~,ID(i).graph,ID(i).info,~] = nfkb_ktr_ratio_metrics(IDs(i), 'MinLifetime',p.Results.MinLifetime,...
                             'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
@@ -62,9 +62,9 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_nfkb)
             if i==1 
-            violin.(viol_met_nfkb{k}) = {ID(i).metrics.(viol_met_nfkb{k})(:, viol_met_index_nfkb{k})};
+            violin.(viol_met_nfkb{k}) = {ID(i).metrics.(viol_met_nfkb{k})};
             else
-            violin.(viol_met_nfkb{k}) = [violin.(viol_met_nfkb{k}), ID(i).metrics.(viol_met_nfkb{k})(:, viol_met_index_nfkb{k})];
+            violin.(viol_met_nfkb{k}) = [violin.(viol_met_nfkb{k}), ID(i).metrics.(viol_met_nfkb{k})];
             end
         end
        end
@@ -82,9 +82,9 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_nfkb)
             if i==1 
-            violin.(viol_met_nfkb{k}) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_ktr == 1, viol_met_index_nfkb{k})};
+            violin.(viol_met_nfkb{k}) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_ktr == 1)};
             else
-            violin.(viol_met_nfkb{k}) = [violin.(viol_met_nfkb{k}), ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_ktr == 1, viol_met_index_nfkb{k})];
+            violin.(viol_met_nfkb{k}) = [violin.(viol_met_nfkb{k}), ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_ktr == 1)];
             end
         end
        end
@@ -92,9 +92,9 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_nfkb)
             if i==1 
-            violin.(viol_met_nfkb{k}) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1, viol_met_index_nfkb{k})};
+            violin.(viol_met_nfkb{k}) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 )};
             else
-            violin.(viol_met_nfkb{k}) = [violin.(viol_met_nfkb{k}), ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1, viol_met_index_nfkb{k})];
+            violin.(viol_met_nfkb{k}) = [violin.(viol_met_nfkb{k}), ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1)];
             end
         end
        end   
@@ -105,10 +105,11 @@ for k = 1:numel(viol_met_nfkb)
  %   violin_mack(violin.(viol_met_nfkb{k}), violin_spacing, 'Area', 0.05, 'YLim', [-5 15])
     axes.ax(k) = nexttile;
     violin_mack(violin.(viol_met_nfkb{k}),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
-    title([viol_met_nfkb{k},' ',num2str(viol_met_index_nfkb{k})], 'Interpreter', 'none')
+    title(viol_met_nfkb{k}, 'Interpreter', 'none')
 end
 
 %% KTR metrics
+%viol_met_ktr = {'off_times_ktr','max_amplitude_ktr','max_integral_ktr','pk1_amp_ktr', 'pk2_amp_ktr','peakfreq_ktr','max_derivative_ktr', 'min_derivative_ktr', 'pk1_time_ktr', 'pk2_time_ktr'};
 
 %figure
 %tiledlayout(2,round(numel(viol_met)/2))
@@ -118,9 +119,9 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_ktr)
             if i==1 
-            violin.(viol_met_ktr{k}) = {ID(i).metrics.(viol_met_ktr{k})(:, viol_met_index_ktr{k})};
+            violin.(viol_met_ktr{k}) = {ID(i).metrics.(viol_met_ktr{k})};
             else
-            violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).metrics.(viol_met_ktr{k})(:, viol_met_index_ktr{k})];
+            violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).metrics.(viol_met_ktr{k})];
             end
         end
        end
@@ -128,9 +129,9 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_ktr)
             if i==1 
-            violin.(viol_met_ktr{k}) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1,viol_met_index_ktr{k})};
+            violin.(viol_met_ktr{k}) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1)};
             else
-            violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1,viol_met_index_ktr{k})];
+            violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1)];
             end
         end
        end
@@ -148,21 +149,25 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_ktr)
             if i==1 
-            violin.(viol_met_ktr{k}) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k} )};
+            violin.(viol_met_ktr{k}) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 )};
             else
-            violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k})];
+            violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1)];
             end
         end
        end    
-end    
+end
+    
+    
 
 violin_spacing = 1:n;
 for k = 1:numel(viol_met_ktr)
  %   violin_mack(violin.(viol_met_ktr{k}), violin_spacing, 'Area', 0.05, 'YLim', [-5 15])
     axes.ax(k) = nexttile;
     violin_mack(violin.(viol_met_ktr{k}),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
-    title([viol_met_ktr{k},' ',num2str(viol_met_index_ktr{k})], 'Interpreter', 'none')
+    title(viol_met_ktr{k}, 'Interpreter', 'none')
 end
+
+
 
 %% Percent oscillators plot
 
