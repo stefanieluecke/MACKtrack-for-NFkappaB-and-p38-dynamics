@@ -1,4 +1,4 @@
-function h = colormapStack(measure1, CellData, options, fig_handle)
+function h = colormapStack_for_responder(measure1, CellData, options, fig_handle, axis_handle)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 % Make stacked-colormap plot of cells
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -12,15 +12,18 @@ end
 
 % Set figure/axes handles, attach measure1/CellData/Options to handles
 handles.figure1 = fig_handle;
-handles.axes1 = axes('Parent', fig_handle);
+handles.axes1 = axis_handle;
+%handles.axes1 = axes('Parent', fig_handle);
 handles.CellData = CellData;
 handles.Measurement1 = measure1;
 handles.Options = options;
 
 
 % Modify colormap so that time values outside of cell lifetime display as gray
-mod_colormap = divergingmap(0:1/1023:1,[14 28 77]/255,[158 27 2]/255);%opens utilities function to make diverging color map with these specified rgb codes and the sepcified step size
-mod_colormap(1,:) = [0.1 0.1 0.1]; %?
+responder_colormap = [([113 115 118]/255);[0.4660 0.6740 0.1880];[0, 0.4470, 0.7410];[0.9290 0.6940 0.1250]];
+
+%responder_colormap = divergingmap(0:1/1023:1,[14 28 77]/255,[158 27 2]/255);%opens utilities function to make diverging color map with these specified rgb codes and the sepcified step size
+%responder_colormap(1,:) = [0.1 0.1 0.1]; %?
 
 % Make plot, setting axes and other options
 measure1DOWN = [zeros(1,size(measure1,2));measure1(1:end-1,:)];
@@ -31,17 +34,23 @@ handles.h1 = imagesc(options.TimeBounds, [1 size(measure1,1)],measure1UP,options
 handles.h2 = imagesc(options.TimeBounds, [1 size(measure1,1)],measure1DOWN,options.MeasurementBounds);
 handles.h3 = imagesc(options.TimeBounds, [1 size(measure1,1)],measure1,options.MeasurementBounds); 
 hold off
-colormap(mod_colormap)
+
+colormap(responder_colormap)
 c = colorbar('YTick',options.MeasurementTicks,'YTickLabel',options.MeasurementTickLabels);
 set(c,'TickLength',0.003*ones(size(get(c,'TickLength'))))
 ylabel(c,[options.Name],'FontSize',14);
+%ytickangle(c,90);
+xlabel(handles.axes1,'Time (h)','FontSize',10);
+
 set(handles.h3,'Parent',handles.axes1);
 set(handles.axes1,'YTick',[],'XTick',options.TimeTicks,'TickLength',[0.005 0.005])
-% - - - - - - - 4) Set fonts, labels, and data cursor callback - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-xlabel(handles.axes1,'Time (h)','FontSize',14);
-title({options.title, ['Number of cells: ',num2str(size(measure1,1))]}, 'Interpreter', 'none')
-%title({['Number of cells: ',num2str(size(measure1,1))]}, 'Interpreter', 'none')
 
+title({options.title, ['Number of cells: ',num2str(size(measure1,1))]}, 'Interpreter', 'none')
+%title({options.title}, 'Interpreter', 'none')
+
+% - - - - - - - 4) Set fonts, labels, and data cursor callback - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+%{
 dcm_obj = datacursormode(fig_handle);
 set(dcm_obj,'UpdateFcn',{@tooltipfcn,handles},'DisplayStyle', 'window')
 set(fig_handle,'ResizeFcn',{@fig_resize,handles},'DockControls','on')
@@ -50,7 +59,7 @@ if nargout>0
 end
 % ========================================================================================
 
-
+%}
 function txt = tooltipfcn(~,event_obj,handles)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 % Highlight selected line and list corresponding cell

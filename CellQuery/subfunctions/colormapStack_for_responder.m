@@ -38,14 +38,17 @@ hold off
 colormap(responder_colormap)
 c = colorbar('YTick',options.MeasurementTicks,'YTickLabel',options.MeasurementTickLabels);
 set(c,'TickLength',0.003*ones(size(get(c,'TickLength'))))
-ylabel(c,[options.Name],'FontSize',14);
+%ylabel(c,[options.Name]);
+ylabel(c,[options.Name],'FontSize',12);
 %ytickangle(c,90);
-xlabel(handles.axes1,'Time (h)','FontSize',10);
+%xlabel(handles.axes1,'Time (h)');
+xlabel(handles.axes1,'Time (h)','FontSize',12);
 
 set(handles.h3,'Parent',handles.axes1);
 set(handles.axes1,'YTick',[],'XTick',options.TimeTicks,'TickLength',[0.005 0.005])
 
-title({options.title}, 'Interpreter', 'none')
+title({options.title, ['Number of cells: ',num2str(size(measure1,1))]}, 'Interpreter', 'none')
+%title({options.title}, 'Interpreter', 'none')
 
 % - - - - - - - 4) Set fonts, labels, and data cursor callback - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 

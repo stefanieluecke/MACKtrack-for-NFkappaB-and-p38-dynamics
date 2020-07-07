@@ -69,7 +69,9 @@ for i = 1:n
     ID(i).graph.responder_status(ID(i).graph.ktrBySigma >= 3 &  ID(i).graph.NFkBBySigma < 3) = 3;
     ID(i).graph.responder_status(ID(i).graph.ktrBySigma < 3 &  ID(i).graph.NFkBBySigma >= 3) = 4;
 
-     varNames = {'non-resp.', 'dual resp.', 'ktr only', 'nfkb only'};
+     varNames = {'non', 'dual', 'ktr', 'nfkb'};
+
+%    varNames = {'non-resp.', 'dual resp.', 'ktr only', 'nfkb only'};
 
     % ID(i).graph.responder_status = categorical(ID(i).graph.responder_status,1:4, varNames); 
 end 
@@ -108,7 +110,7 @@ end
 
 %% Plot NFkB and KTR heatmaps below each other
 figs.a = figure('name', 'HMs NFkB+KTR');
-set(figs.a,'Position', [500 400 1000 600])
+set(figs.a,'Position', [500 400 1000 400])
 fig_handle = gcf;
 tiledlayout(1,n)
 

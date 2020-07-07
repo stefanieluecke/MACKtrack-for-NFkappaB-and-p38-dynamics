@@ -1,6 +1,8 @@
 function [ID] = graphFeatures(IDs, varargin)
 
 %20200625 graphs features for Violin Plots, %responders, %oscillators for NFkB and KTR
+%also provides features with option for filtering based on responder status
+
 
 %for any number of experiment IDs
 p = inputParser;
@@ -29,12 +31,14 @@ addParameter(p, 'FilterResponders','none', @(x) any(validatestring(x,expectedFil
 
 parse(p,IDs, varargin{:})
 
-ViolMetTableNFkB = readtable(p.Results.FeatureListFile, 'Sheet', 'ViolMetTableNFkB');
+ViolMetTableNFkB = readtable(p.Results.FeatureListFile, 'Sheet', 'ViolFeatTableNFkB');
 viol_met_nfkb = table2cell(ViolMetTableNFkB(:,1)); %list of metrics/features to be plotted
 viol_met_index_nfkb = table2cell(ViolMetTableNFkB(:,2)); %index for metrics with multiple columns (eg duration, etc.)
-ViolMetTableKTR= readtable(p.Results.FeatureListFile, 'Sheet', 'ViolMetTableKTR');
+viol_met_units_nfkb = table2cell(ViolMetTableNFkB(:,3));
+ViolMetTableKTR= readtable(p.Results.FeatureListFile, 'Sheet', 'ViolFeatTableKTR');
 viol_met_ktr = table2cell(ViolMetTableKTR(:,1)); %list of metrics/features to be plotted
 viol_met_index_ktr = table2cell(ViolMetTableKTR(:,2)); %index for metrics with multiple columns (eg duration, etc.)
+viol_met_units_ktr = table2cell(ViolMetTableKTR(:,3));
 
 %viol_met_nfkb = {'off_times_nfkb','max_amplitude_nfkb','max_integral_nfkb','pk1_amp_nfkb', 'pk2_amp_nfkb','peakfreq_nfkb','max_derivative_nfkb', 'min_derivative_nfkb', 'pk1_time_nfkb', 'pk2_time_nfkb'};
 %viol_met_ktr = {'off_times_ktr','max_amplitude_ktr','max_integral_ktr','pk1_amp_ktr', 'pk2_amp_ktr','peakfreq_ktr','max_derivative_ktr', 'min_derivative_ktr', 'pk1_time_ktr', 'pk2_time_ktr'};
@@ -112,6 +116,7 @@ for k = 1:numel(viol_met_nfkb)
     axes.ax(k) = nexttile;
     violin_mack(violin.(viol_met_nfkb{k}),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
     title([viol_met_nfkb{k},' ',num2str(viol_met_index_nfkb{k})], 'Interpreter', 'none')
+    ylabel(viol_met_units_nfkb{k})
 end
 
 %% KTR metrics
@@ -168,4 +173,5 @@ for k = 1:numel(viol_met_ktr)
     axes.ax(k) = nexttile;
     violin_mack(violin.(viol_met_ktr{k}),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
     title([viol_met_ktr{k},' ',num2str(viol_met_index_ktr{k})], 'Interpreter', 'none')
+    ylabel(viol_met_units_ktr{k})
 end

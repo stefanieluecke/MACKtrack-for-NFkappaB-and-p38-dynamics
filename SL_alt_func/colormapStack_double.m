@@ -40,6 +40,7 @@ c = colorbar('YTick',options1.MeasurementTicks,'YTickLabel',options1.Measurement
 set(c,'TickLength',0.003*ones(size(get(c,'TickLength'))))
 ylabel(c,[options1.Name],'FontSize',14);
 xlabel('Time (h)','FontSize',14);
+title({options1.title, ['Number of cells: ',num2str(size(measure1,1))]}, 'Interpreter', 'none')
 yticks([]);
 xticks(options1.TimeTicks);
 % ticklength(0.005, 0.005);
@@ -63,6 +64,7 @@ d = colorbar('YTick',options2.MeasurementTicks,'YTickLabel',options2.Measurement
 set(d,'TickLength',0.003*ones(size(get(d,'TickLength'))))
 ylabel(d,[options2.Name],'FontSize',14);
 xlabel('Time (h)','FontSize',14);
+title({options1.title, ['Number of cells: ',num2str(size(measure1,1))]}, 'Interpreter', 'none')
 yticks([]);
 xticks(options2.TimeTicks);
 % xlabel(handles.axes1,'Time (h)','FontSize',14);

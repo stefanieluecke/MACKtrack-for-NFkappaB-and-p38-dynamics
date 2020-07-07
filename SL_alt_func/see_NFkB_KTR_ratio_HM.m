@@ -74,7 +74,11 @@ end
 
 [~,graph.order] = sort(graph.sort_metric, p.Results.SortOrder);
 
-%% Graphing 
+%% Graphing
+
+graph.opt_nfkb.title = info.name;
+graph.opt_ktr.title = info.name;
+ 
 % Heatmap
 figs.a = figure('name','Heatmap_NFkB');
 set(figs.a,'Position', [500 7 400 600])
