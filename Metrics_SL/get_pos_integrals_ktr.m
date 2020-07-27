@@ -1,7 +1,7 @@
-function [pos_integral_features_ktr] = get_pos_integrals_ktr(integrals, FramesPerHour, StimulationTimePoint, endFrame)
+function [pos_integral_features_ktr] = get_pos_integrals_ktr(integrals, FramesPerHour, endFrame)
 
-%integrals are shortened to include only values from StimulationTimePoint onwards
-integrals = integrals(:, StimulationTimePoint:end);
+%integrals now already are calculated using only values after StStimulationTimePoint 
+%integrals = integrals(:, StimulationTimePoint:end);
 
 integrals_pos = nan(size(integrals));
 integrals_pos(:,1) = integrals(:,1);

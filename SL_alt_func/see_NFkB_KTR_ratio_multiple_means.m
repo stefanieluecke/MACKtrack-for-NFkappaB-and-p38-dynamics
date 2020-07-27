@@ -1,4 +1,4 @@
-function [] = see_NFkB_KTR_ratio_multiple_means(IDs, varargin)
+function [ID] = see_NFkB_KTR_ratio_multiple_means(IDs, varargin)
 
 % 
 %Enter highest responder first
@@ -23,7 +23,7 @@ addParameter (p, 'OnThreshNFkB', 3, @isnumeric); %? not used in code?
 addParameter (p, 'GraphLimitsNFkB',[-0.9 7],@isnumeric);
 addParameter(p,'StartThreshKTR',0.9, valid_conv); %max allowable starting threshhold to filter out cells with pre-activated KTR, default is 0.6
 addParameter (p, 'OnThreshKTR', 3, @isnumeric);%? not used in code?
-addParameter (p, 'GraphLimitsKTR',[-0.05 0.35],@isnumeric);
+addParameter (p, 'GraphLimitsKTR',[-0.02 0.35],@isnumeric);
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
 
 expectedFilters = {'none','nfkb', 'ktr', 'both', 'respective'};

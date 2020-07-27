@@ -50,17 +50,18 @@ valid_conv = @(x) assert(isnumeric(x)&&(x>=0)&&(length(x)==1),...
 addParameter(p,'ConvectionShift',1, valid_conv); %allows adjustment of convection shift (?)
 addParameter(p,'MinLifetime',109, @isnumeric); %allows adjustment of minimum lifetime (?)
 addParameter(p,'MinSize',90, valid_conv); %allows adjustment of minimum size (?)
-%todo adjust startthresh parameters with new thresholds
 addParameter(p,'StartThreshNFkB',14, valid_conv); %max allowable starting threshhold (before baseline deduction)to filter out cells with pre-activated NFkB
 addParameter (p, 'OnThreshNFkB', 3, @isnumeric); %sigma threshold for determining responders
-%todo adjust OnThresh parameters with new thresholds
-addParameter (p, 'GraphLimitsNFkB',[-0.25 8],@isnumeric);
+addParameter (p, 'GraphLimitsNFkB',[-0.25 7],@isnumeric);
 addParameter(p,'StartThreshKTR',0.9, valid_conv); %max allowable starting threshhold to filter out cells with pre-activated KTR, default is 0.6
 addParameter (p, 'OnThreshKTR', 3, @isnumeric);%sigma threshold for determining responders
-addParameter (p, 'GraphLimitsKTR',[-0.0,0.4],@isnumeric);
+addParameter (p, 'GraphLimitsKTR',[-0.02,0.35],@isnumeric);
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric); % number of unstimulated timepoints to use in baseline calculation, etc
 addParameter(p,'NFkBBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB baseline deduction
-addParameter(p, 'NFkBBackgroundAdjustment', 'on',@(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB fluorescence distrution adjustment
+addParameter(p, 'NFkBBackgroundAdjustment', 'on',@(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB fluorescence distribution adjustment
+addParameter(p,'NFkBBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of NFkB trajectories with correction factor for fluorescence drop derived from Mock experiments
+
+
 
 % Parse parameters, assign to variables
 parse(p,id, varargin{:}) 
@@ -95,9 +96,11 @@ robuststd = @(distr, cutoff) nanstd(distr(distr < (nanmedian(distr)+cutoff*nanst
 
 % Filtering, part 1 cell fate and cytoplasmic intensity
 droprows = []; %creates an empty matrix/array
-droprows = [droprows, sum(isnan(measure.NFkBdim_Nuclear(:,1:4)),2)>2]; % Use only cells existing @ expt start %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 2 NaN values in nuclear NFkB levels within first 4 timepoints
+droprows = [droprows, sum(isnan(measure.NFkBdim_Nuclear(:,1:StimulationTimePoint)),2)>2]; % Use only cells existing @ expt start %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 2 NaN values in nuclear NFkB levels within first 4 timepoints
 droprows = [droprows, sum(isnan(measure.NFkBdim_Nuclear(:,1:MinLifetime)),2)>3]; % Use only long-lived cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 3 NaN values in nuclear NFkB levels within minimum lifetime
-droprows = [droprows, sum(measure.NFkBdim_Cyto_full(:,1:4)==0,2)>0]; % Very dim cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 0 nfkb cytoplasmic values in first four timepoints that are equal to 0
+droprows = [droprows, sum(measure.NFkBdim_Cyto_full(:,1:StimulationTimePoint)==0,2)>0]; % Very dim cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 0 nfkb cytoplasmic values in first four timepoints that are equal to 0
+droprows = [droprows, ((nanmean(measure.KTR_nuc1(:,1:StimulationTimePoint), 2)< prctile(nanmean(measure.KTR_nuc1(:,1:StimulationTimePoint), 2), 5)) | (nanmean(measure.KTR_nuc1(:,1:StimulationTimePoint), 2)> prctile(nanmean(measure.KTR_nuc1(:,1:StimulationTimePoint), 2), 95)))]; %filters cells with very low or high KTR expression
+
 %droprows = [droprows, info.CellData(:,end)]; % Non-edge cells
 
 nfkb = measure.NFkBdim_Nuclear(:,:); %nfkb is defined as NFkB nuclear measurement from NFkBdim module
@@ -123,29 +126,34 @@ nfkb_baseline = nanmin([nanmin(nfkb(:,1:4),[],2),nfkb_min],[],2); %nfkb baseline
 nfkb = nfkb - repmat(nfkb_baseline,1,size(nfkb,2)); %nfkb is re-defined as nfkb values minus nfkb_baseline array
 %}
 
-%
 %NFkB baseline deduction, simply deducting mean of unstimulated timepoints per cell
 if strcmpi(p.Results.NFkBBaselineDeduction,'on')
     nfkb_baseline = nanmean(nfkb(:,1:StimulationTimePoint),2); %baseline is determined from 1st to 13nth timepoint 
     nfkb_no_base_ded = nfkb;    
     nfkb =  nfkb - nfkb_baseline; % ktr activity is defined as baseline - fluorescence measurement
 end 
-%}
 
+%NFkB Baseline shift adjustment based on general mock values
+
+if strcmpi(p.Results.NFkBBaselineAdjustment,'on')
+    home_folder = mfilename('fullpath'); % Load locations (for images and output data)%mfilename returns path of currently running code
+    slash_idx = strfind(home_folder,filesep); %looks for system-specific file separator in home_folder
+    load([home_folder(1:slash_idx(end-1)), 'NFkBBaselineAdjustment.mat'],'-mat'); % loads locations.mat from home folder%??, whether or not it's a .mat file %? I do not understand how this works...
+    nfkb = nfkb + NFkBBaselineCorrFact(1:size(nfkb, 2));
+end
+
+%Plot baseline subtracted trajectories
 if verbose_flag
     figure, imagesc(nfkb,prctile(nfkb(:),[5,99])),colormap(parula), colorbar %plots raw baseline-subttracted trajectories, using 5th and 99th percentile of nfkb as limits
     title('All (baseline-subtracted) NFkB trajectories')
 end
 
-
     
-    
+%KTR quantification    
 ktr = measure.KTR_ratio1(:,:); %ktr is defined as KTR cytoplasmic/nuclear ratio from ktr module
 
-%KTR baseline deduction --> baseline deduction is appropriate only for some
-%metrics --> pass along both
-ktr_baseline = nanmean(ktr(:,1:StimulationTimePoint),2); %baseline is determined from 1st to 13nth timepoint 
-    %? parametrize later on
+%KTR baseline deduction 
+ktr_baseline = nanmean(ktr(:,1:StimulationTimePoint),2); 
 ktr_no_base_ded =  ktr; % ktr activity is defined as baseline - fluorescence measurement
 ktr =  ktr - ktr_baseline; % ktr activity is defined as baseline - fluorescence measurement
 
@@ -155,10 +163,12 @@ if verbose_flag
 end
 
 % Filtering, part 2: eliminate outlier cells (based on mean value)
+
 %todo decide whether to take only trajectories after stimulation
 nfkb_lvl = reshape(nfkb(max(droprows,[],2) == 0,:),[1 numel(nfkb(max(droprows,[],2) == 0,:))]); %sets nfkb level as nfkb measurements of cells (full trajectories) to be kept reshaped to a 1xtotal number of array elements matrix 
 droprows =  [droprows, (nanmean(abs(nfkb-nanmean(nfkb_lvl)),2)./nanstd(nfkb_lvl))>=3]; %removes cells with mean levels larger than 3x standard deviation (mean of all values subtracted from each nfkb element, absolute value of that, mean across each trajectory, each element dividided by standard deviation of nfkb level, check if larger or equal than 3, add to droprows as a 1/0 column
 droprows =  [droprows, (nanmean(abs(nfkb-nanmean(nfkb_lvl)),2)./nanstd(nfkb_lvl))>=1.7]; %removes cells with mean levels larger than 1.7x standard deviation 
+
 % Filtering, part 2: eliminate outlier cells (based on mean value)
 ktr_lvl = reshape(ktr(max(droprows,[],2) == 0,:),[1 numel(ktr(max(droprows,[],2) == 0,:))]); %sets ktr level as ktr ratio measurements of cells (full trajectories) to be kept reshaped to a 1xtotal number of array elements matrix 
 droprows =  [droprows, (nanmean(abs(ktr-nanmean(ktr_lvl)),2)./nanstd(ktr_lvl))>=3]; %removes cells with mean levels larger than 3x standard deviation (mean of all values subtracted from each ktr element, absolute value of that, mean across each trajectory, each element dividided by standard deviation of ktr level, check if larger or equal than 3, add to droprows as a 1/0 column
@@ -183,7 +193,7 @@ info.dropped = droprows;
 
 % Show some filter information
 if verbose_flag
-    filter_str = {'didn''t exist @ start', 'short-lived cells', 'very dim NFkB',...
+    filter_str = {'didn''t exist @ start', 'short-lived cells', 'very dim NFkB','very dim and very high KTR Nuc'...
         'extreme NFkB val [mean val >3*std]','NFkB outliers [mean>1.7*std]','extreme KTR val [mean>3*std]', 'KTR outliers [mean val >1.7*std]', 'NFkB active @ start','KTR active @ start', 'high nuclear stain','low area'};
     disp(['INITIAL: ', num2str(size(droprows,1)),' cells'])
     for i = 1:size(droprows,2)

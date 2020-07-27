@@ -41,8 +41,8 @@ addParameter(p,'StartThreshKTR',0.9, @isnumeric);
 addParameter(p, 'MinSize', 90, @isnumeric); 
 addParameter(p,'MinLifetime',109, @isnumeric);
 addParameter(p,'TrimFrame',157, @isnumeric);
-addParameter (p, 'GraphLimitsNFkB',[-0.25 8],@isnumeric);
-addParameter (p, 'GraphLimitsKTR',[-0.0,0.4],@isnumeric);
+addParameter (p, 'GraphLimitsNFkB',[-0.25 7],@isnumeric);
+addParameter (p, 'GraphLimitsKTR',[-0.02,0.35],@isnumeric);
 expectedFlags = {'on','off'};
 addParameter(p,'Verbose','off', @(x) any(validatestring(x,expectedFlags)))
 valid_conv = @(x) assert(isnumeric(x)&&(x>=0)&&(length(x)==1),...
@@ -128,16 +128,11 @@ metrics.baseline_nfkb = info.nfkb_baseline;
 
 % version including integral below 0  
 % 2) integrated activity
+%includes below 0 activity 
 % use simple baseline deducted time series
-% include time before stimulation (should be close to 0)
-%todo check what quantitative effect my new baseline method has, since this now includes values below 0
+% start with stimulation time point
 
-metrics.integrals_nfkb = cumtrapz(t,metrics.time_series_nfkb,2);
-
-%metrics.integrals_nfkb = nan(size(metrics.time_series_nfkb));
-%for i = 1:size(metrics.integrals_nfkb,1)
-%    metrics.integrals_nfkb(i,:) = cumtrapz(t,metrics.time_series_nfkb(i,:));
-%end
+metrics.integrals_nfkb = cumtrapz(t(StimulationTimePoint:end),metrics.time_series_nfkb(:,StimulationTimePoint:end),2);
 
 % 3) differentiated activity - use central finite difference
 % ? unit: nfkb activity (au)/hour
@@ -149,7 +144,7 @@ metrics.derivatives_nfkb = (smoothed(:,3:end) - smoothed(:,1:end-2))/(1/6); %?di
 try
     metrics.time_series_nfkb = metrics.time_series_nfkb(:,1:p.Results.TrimFrame);
     metrics.time_series_nfkb_no_base_ded = metrics.time_series_nfkb_no_base_ded(:,1:p.Results.TrimFrame);
-    metrics.integrals_nfkb = metrics.integrals_nfkb(:,1:p.Results.TrimFrame);
+    metrics.integrals_nfkb = metrics.integrals_nfkb(:,1:(p.Results.TrimFrame-StimulationTimePoint));
     metrics.derivatives_nfkb = metrics.derivatives_nfkb(:,1:(p.Results.TrimFrame-2));
     smoothed = smoothed(:,1:p.Results.TrimFrame);
     t = t(1:p.Results.TrimFrame);
@@ -179,7 +174,7 @@ end
 %% MAX/MIN metrics
 %adjusted to include only time after stimulation
 metrics.max_amplitude_nfkb = nanmax(metrics.time_series_nfkb(:,StimulationTimePoint:end),[],2);
-metrics.max_integral_nfkb = nanmax(metrics.integrals_nfkb(:,StimulationTimePoint:end),[],2);
+metrics.max_integral_nfkb = nanmax(metrics.integrals_nfkb,[],2);
 metrics.max_derivative_nfkb = nanmax(metrics.derivatives_nfkb(:,StimulationTimePoint:end),[],2);
 metrics.min_derivative_nfkb = nanmin(metrics.derivatives_nfkb(:,StimulationTimePoint:end),[],2);
 
@@ -189,6 +184,10 @@ Wliml = StimulationTimePoint+1; %first/lower time point of window to check for a
 Wlimu = StimulationTimePoint + 48; %last/upper time point of window to check for activity, ie check in the first 4 hours after stimulation
 blockLengthThresh = 5; %number of consecutive frames cell needs to pass activity threshold to be considered a responder
 baseline_stdv_nfkb = nanstd(metrics.time_series_nfkb(:,1:StimulationTimePoint),0,2);
+
+%20200714 temp
+metrics.baseline_stdv_nfkb =baseline_stdv_nfkb;
+
 NFkBBySigma = (smoothed(:,Wliml:Wlimu))./baseline_stdv_nfkb;
 block_length_readout = zeros(size(NFkBBySigma,1),100);
 block_length_readout(:,:) = 111;
@@ -417,7 +416,7 @@ metrics.pk2_time_nfkb = (metrics.pk2_time_nfkb-StimulationTimePoint)/FramesPerHo
 % Envelope width: maximum consecutive time above a threshold (envelope must begin within 1st 6 hrs)
 smoothed2 = smoothrows(metrics.time_series_nfkb,5);
 %aux.thresholds = linspace(0, OnThreshNFkB*3, 40);
-upperThresh = 8;
+upperThresh = 7.1;
 %todo pick proper threshold
 %Ade uses only 25 thresholds, not 40
 aux.thresholds = linspace(0, upperThresh, 25);
@@ -462,9 +461,7 @@ end
 smoothed2 = smoothrows(metrics.time_series_nfkb,5);
 %baseline_stdv_nfkb = nanstd(metrics.time_series_nfkb(:,1:StimulationTimePoint),0,2); %already calculated above
 smoothed2_by_sigma= smoothed2./baseline_stdv_nfkb;
-%todo pick proper threshold
-%aux.thresholds = linspace(0, OnThreshNFkB*3, 40);
-upperThresh = OnThreshNFkB*12;
+upperThresh = 41.7;
 aux.thresholds = linspace(0, upperThresh, 25);
 metrics.envelope_sigma_nfkb = zeros(size(metrics.time_series_nfkb,1),length(aux.thresholds));
 for j = 1:length(aux.thresholds)
@@ -501,6 +498,11 @@ for i = 1:length(aux.thresholds)
     metrics.duration_sigma_nfkb(:,i) = nansum(smoothed_by_sigma(:,StimulationTimePoint:end)>aux.thresholds(i),2)/FramesPerHour;
 %    metrics.duration_nfkb(:,i) = nansum(smoothed>aux.thresholds(i),2)/FramesPerHour;
 end
+
+%20200714 temp needed for determining thresholds
+metrics.nfkb_by_sigma= smoothed2_by_sigma; 
+
+
 %% KTR METRICS
 %% BASIC KTR METRICS: TIME SERIES, Baseline DERIVATIVE, INTEGRAL
 %
@@ -528,12 +530,7 @@ metrics.baseline_ktr = info.ktr_baseline;
 % 2) integrated activity
 %use baseline deducted KTR ratios for this
 %prev integration incl values below 0
-    metrics.integrals_ktr = cumtrapz(t,metrics.time_series_ktr,2);
-%metrics.integrals_ktr = nan(size(metrics.time_series_ktr));
-%for i = 1:size(metrics.integrals_ktr,1)
-%    metrics.integrals_ktr(i,:) = cumtrapz(t,metrics.time_series_ktr(i,:));
-%end
-%}
+    metrics.integrals_ktr = cumtrapz(t(StimulationTimePoint:end),metrics.time_series_ktr(:, StimulationTimePoint:end),2);
 
 % 3) differentiated activity - use central finite difference
 % use baseline deducted KTR ratios for this, shouldn't make a difference 
@@ -545,7 +542,7 @@ metrics.derivatives_ktr = (smoothed(:,3:end) - smoothed(:,1:end-2))/(1/6);
 try
     metrics.time_series_ktr = metrics.time_series_ktr(:,1:p.Results.TrimFrame);
     metrics.time_series_ktr_no_base_ded = metrics.time_series_ktr_no_base_ded(:,1:p.Results.TrimFrame);
-    metrics.integrals_ktr = metrics.integrals_ktr(:,1:p.Results.TrimFrame);
+    metrics.integrals_ktr = metrics.integrals_ktr(:,1:(p.Results.TrimFrame-StimulationTimePoint));
     metrics.derivatives_ktr = metrics.derivatives_ktr(:,1:(p.Results.TrimFrame-2));
     smoothed = smoothed(:,1:p.Results.TrimFrame);
     t = t(1:p.Results.TrimFrame);
@@ -571,7 +568,8 @@ end
 
 %% MAX/MIN metrics
 metrics.max_amplitude_ktr = nanmax(metrics.time_series_ktr(:,StimulationTimePoint:end),[],2);
-metrics.max_integral_ktr = nanmax(metrics.integrals_ktr(:,StimulationTimePoint:end),[],2);
+metrics.max_amplitude_4h_ktr = nanmax(metrics.time_series_ktr(:,StimulationTimePoint:48+StimulationTimePoint),[],2);
+metrics.max_integral_ktr = nanmax(metrics.integrals_ktr,[],2);
 metrics.max_derivative_ktr = nanmax(metrics.derivatives_ktr(:,StimulationTimePoint:end),[],2);
 metrics.min_derivative_ktr = nanmin(metrics.derivatives_ktr(:,StimulationTimePoint:end),[],2);
 
@@ -582,6 +580,10 @@ Wliml = StimulationTimePoint+1; %first/lower time point of window to check for a
 Wlimu = StimulationTimePoint + 36; %last/upper time point of window to check for activity, ie check in the first 4 hours after stimulation
 blockLengthThresh = 3; %number of consecutive frames cell needs to pass activity threshold to be considered a responder
 baseline_stdv_ktr = nanstd(metrics.time_series_ktr(:,1:StimulationTimePoint),0,2);
+
+%20200714 temp
+metrics.baseline_stdv_ktr =baseline_stdv_ktr;
+
 ktrBySigma = (smoothed(:,Wliml:Wlimu))./baseline_stdv_ktr;
 block_length_readout = zeros(size(ktrBySigma,1),100);
 block_length_readout(:,:) = 111;
@@ -806,10 +808,8 @@ metrics.pk2_time_ktr = (metrics.pk2_time_ktr-StimulationTimePoint)/FramesPerHour
 %% KTR METRICS OF DURATION
 % Envelope width: maximum consecutive time above a threshold (envelope must begin within 1st 6 hrs)
 smoothed2 = smoothrows(metrics.time_series_ktr,5);
-%fixed use of OnThresh, but using other threshold (0.8 is lower than most max amplitude across a couple of exp
-%todo pick proper threshold
 %aux.thresholds = linspace(0, OnThreshKTR*3, 40);
-upperThresh = 0.3;
+upperThresh = 0.28;
 %20200606 temp make threshold lower to test CC calc (make sure less 0) in metrics
 %upperThresh = 0.4;
 aux.thresholds = linspace(0, upperThresh, 25);
@@ -847,17 +847,12 @@ for i = 1:length(aux.thresholds)
     metrics.duration_ktr(:,i) = nansum(smoothed(:,StimulationTimePoint:end)>aux.thresholds(i),2)/FramesPerHour;
 end
 
-smoothed2_by_sigma= smoothed2./baseline_stdv_nfkb;
 %% KTR METRICS OF DURATION using sigma thresholds
 % Envelope width: maximum consecutive time above a threshold (envelope must begin within 1st 6 hrs)
 smoothed2 = smoothrows(metrics.time_series_ktr,5);
 smoothed2_by_sigma= smoothed2./baseline_stdv_ktr;
-%fixed use of OnThresh, but using other threshold (0.8 is lower than most max amplitude across a couple of exp
 %todo pick proper threshold
-%aux.thresholds = linspace(0, OnThreshKTR*3, 40);
-%SL 20200606 temp change in threshold to test CC calc
-%upperThresh = OnThreshKTR*5;
-upperThresh = OnThreshKTR*4;
+upperThresh = 16.65;
 aux.thresholds = linspace(0, upperThresh, 25);
 metrics.envelope_sigma_ktr = zeros(size(metrics.time_series_ktr,1),length(aux.thresholds));
 for j = 1:length(aux.thresholds)
@@ -892,3 +887,6 @@ metrics.duration_sigma_ktr = zeros(size(metrics.time_series_ktr,1),length(aux.th
 for i = 1:length(aux.thresholds)
     metrics.duration_sigma_ktr(:,i) = nansum(smoothed_by_sigma(:,StimulationTimePoint:end)>aux.thresholds(i),2)/FramesPerHour;
 end
+
+%20200714 temp need smoothed2_by_sigma in metrics output for testing
+metrics.ktr_by_sigma= smoothed2_by_sigma; 

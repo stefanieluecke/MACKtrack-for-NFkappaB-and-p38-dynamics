@@ -13,7 +13,7 @@ addParameter(p, 'FqRange',[0.33 1] , @isnumeric);
 addParameter(p, 'Fs',12, @isnumeric);
 addParameter(p, 'FillMethod','linear', isvalidfill);
 %addParameter(p, 'Stats', ["peak2peak", "peak2rms","obw","bandpower"],is_valid_stat);
-%addParameter(p, 'SmoothMethod',["sgolay", "lowess"], @istext);
+addParameter(p, 'SmoothMethod',['sgolay'], @istext); %recommended by Ade: 'sgolay', or 'lowess'
 
 parse(p,time_series,StimulationTimePoint, varargin{:});
 
@@ -21,10 +21,12 @@ sig_stats=struct;
 
 time_series_mod = time_series(:,StimulationTimePoint:end);
 time_series_mod=fillmissing(time_series_mod,p.Results.FillMethod, 2, 'EndValues','extrap');
-%todo carefully check smoothing function, Ade uses different smoothing funciton not foudn in his Github, likelz not simple mov average
-smoothData = smoothrows(time_series_mod,3); 
+%todo test sgolay and lowess smoothing methods
+%todo find out which window size Ade used here
+smoothData = smoothdata(time_series_mod,p.Results.SmoothMethod); 
 
 %todo is Fs the same as frames per hour, if so use my parametrization
+%todo understand what FqRange does exactly
 Fs=p.Results.Fs; freq_range =p.Results.FqRange;
 
 sig_stats.medfreq_ktr      = medfreq(smoothData', Fs,freq_range)';

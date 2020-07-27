@@ -17,14 +17,16 @@ expectedFlags = {'on','off'};
 addParameter(p,'Verbose','on', @(x) any(validatestring(x,expectedFlags)));%checks whether optional name-value argument matches on or off %checks if x matches expectedFlags
 valid_conv = @(x) assert(isnumeric(x)&&(x>=0)&&(length(x)==1),...
     'Parameter must be single integer >= 0'); %checks whether parameters below are single integers
-addParameter(p,'ConvectionShift',1, valid_conv); %allows adjustment of convection shift (?)
+% addParameter(p,'ConvectionShift',1, valid_conv); %allows adjustment of convection shift (?)
 addParameter(p,'MinLifetime',109, @isnumeric); %allows adjustment of minimum lifetime (?)
 addParameter(p,'MinSize',90, valid_conv); %allows adjustment of minimum size (?)
 addParameter(p,'TrimFrame',157, @isnumeric);
 addParameter(p,'StartThreshNFkB',14, valid_conv);  %max allowable starting threshhold (before baseline deduction)to filter out cells with pre-activated NFkB
 addParameter (p, 'OnThreshNFkB', 3, @isnumeric); %sigma threshold for determining responders
+addParameter (p, 'GraphLimitsNFkB',[-0.25 7],@isnumeric);
 addParameter(p,'StartThreshKTR',0.9, valid_conv); %max allowable starting threshhold to filter out cells with pre-activated KTR, default is 0.6
 addParameter (p, 'OnThreshKTR', 3, @isnumeric); %sigma threshold for determining responders
+addParameter (p, 'GraphLimitsKTR',[-0.02,0.35],@isnumeric);
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
 addParameter(p, 'FramesPerHour', 12, @isnumeric)
 
@@ -82,22 +84,14 @@ if any(ismember(FeatureList, SignalStatsList))
     sig_stats_nfkb =get_sig_stats_nfkb(metrics.time_series_nfkb, StimulationTimePoint);
     sig_stats_ktr =get_sig_stats_ktr(metrics.time_series_ktr, StimulationTimePoint);
 end
-%get_fold_change
-%{
-if any(ismember(FeatureList, {'fold_change_nfkb', 'max_fold_change_nfkb'}))
-    [fold_change_nfkb, max_fold_change_nfkb] = get_fold_change(metrics.time_series_nfkb_no_base_ded, metrics.baseline_nfkb, StimulationTimePoint);
-end
-if any(ismember(FeatureList, {'fold_change_ktr', 'max_fold_change_ktr'}))
-    [fold_change_ktr, max_fold_change_ktr] = get_fold_change(metrics.time_series_ktr_no_base_ded, metrics.baseline_ktr, StimulationTimePoint);
-end
-%}
 
+% positive integrals
 if any(ismember(FeatureList, {'integrals_pos_nfkb','time2HalfMaxPosIntegral_nfkb','max_pos_integral_nfkb',...
                     'integrals_pos_ktr','time2HalfMaxPosIntegral_ktr', 'max_pos_integral_ktr'}))
    % endFrame = min(96+StimulationTimePoint, size(metrics.integrals_nfkb-StimulationTimePoint,2));
-     endFrame = min(96+StimulationTimePoint, size(metrics.integrals_nfkb,2)-StimulationTimePoint);
-    pos_integral_features_nfkb = get_pos_integrals_nfkb(metrics.integrals_nfkb, FramesPerHour, StimulationTimePoint, endFrame);
-    pos_integral_features_ktr = get_pos_integrals_ktr(metrics.integrals_ktr, FramesPerHour, StimulationTimePoint, endFrame);
+     endFrame = min(96, size(metrics.integrals_nfkb,2));
+    pos_integral_features_nfkb = get_pos_integrals_nfkb(metrics.integrals_nfkb, FramesPerHour, endFrame);
+    pos_integral_features_ktr = get_pos_integrals_ktr(metrics.integrals_ktr, FramesPerHour, endFrame);
 
 end
 
@@ -114,12 +108,11 @@ for j = 1:length(FeatureList)
         switch featName
 %get basic metrics, including filtered time_series/trajectories from metrics function
  %todo integral only above 0 ( in metric function)
-            case {'derivatives_nfkb', 'integrals_nfkb', 'time_series_nfkb', 'time_series_nfkb_no_base_ded',...
-                    'derivatives_ktr', 'integrals_ktr', 'time_series_ktr', 'time_series_ktr_no_base_ded'}
+            case {'derivatives_nfkb', 'time_series_nfkb', 'time_series_nfkb_no_base_ded',...
+                    'derivatives_ktr', 'time_series_ktr', 'time_series_ktr_no_base_ded'}
                 features.(featName) = metrics.(featName)(:,StimulationTimePoint:end);
-%todo see what to do about intwin metrics (Ade doesn't use them?)
-%            case{'intwin1_nfkb','intwin3_nfkb'}
-%                features.(featName) = metrics.(featName);
+            case {'integrals_nfkb','integrals_ktr'}
+                features.(featName) = metrics.(featName);
             case{'baseline_nfkb','responder_index_nfkb','off_times_nfkb',...
                     'baseline_ktr','responder_index_ktr','off_times_ktr'}
                 features.(featName) = metrics.(featName);
@@ -136,8 +129,7 @@ for j = 1:length(FeatureList)
             case{'pk1_time_nfkb','pk1_amp_nfkb','pk2_time_nfkb','pk2_amp_nfkb',...
                     'pk1_time_ktr','pk1_amp_ktr','pk2_time_ktr','pk2_amp_ktr'}
                 features.(featName) = metrics.(featName);
-%todo proper picking of duration and envelope threshold and method,
-%different thresholds for KTR And NFkB
+%todo confirm envelope and duration thresholds are implemented
             case{'envelope_nfkb','duration_nfkb'}
                 features.(featName) = metrics.(featName);
             case{'envelope_sigma_nfkb','duration_sigma_nfkb'}
@@ -159,23 +151,20 @@ for j = 1:length(FeatureList)
                 features.(featName) = nanmean(metrics.derivatives_nfkb(:,StimulationTimePoint:end),2);           
              case {'mean_derivative_ktr'}
                 features.(featName) = nanmean(metrics.derivatives_ktr(:,StimulationTimePoint:end),2);
+
 %metrics from Ade's computeFeature functions using additional functions
-%todo see if foldchange is useful in my context
-            case{'fold_change_nfkb'}
-                features.(featName)     = get_fold_change(metrics.time_series_nfkb_no_base_ded, metrics.baseline_nfkb, StimulationTimePoint);
-            case{'max_fold_change_nfkb'}
-                [~,features.(featName)] = get_fold_change(metrics.time_series_nfkb_no_base_ded, metrics.baseline_nfkb, StimulationTimePoint);
-            case{'fold_change_ktr'}
-                features.(featName)     = get_fold_change(metrics.time_series_ktr_no_base_ded, metrics.baseline_ktr, StimulationTimePoint);
-            case{'max_fold_change_ktr'}
-                [~,features.(featName)] = get_fold_change(metrics.time_series_ktr_no_base_ded, metrics.baseline_ktr, StimulationTimePoint);       
+
 %time to half max integral within first 8 hours
             case {'time2HalfMaxIntegral_nfkb'}
-                endFrame = min(96+StimulationTimePoint, size(metrics.integrals_nfkb,2));
-                features.(featName)     = get_time_to_half_max_integral(metrics.integrals_nfkb(:,1:endFrame), FramesPerHour, StimulationTimePoint);
+%                endFrame = min(96+StimulationTimePoint, size(metrics.integrals_nfkb,2));
+                endFrame = min(96, size(metrics.integrals_nfkb,2));
+                %here '1' instead of 'StimulationTimePoint', because size of pos integrals already only includes values from StimulationTimePoint onwards
+                features.(featName)     = get_time_to_half_max_integral(metrics.integrals_nfkb(:,1:endFrame), FramesPerHour, 1);
             case {'time2HalfMaxIntegral_ktr'}
-                endFrame = min(96+StimulationTimePoint, size(metrics.integrals_ktr,2));
-                features.(featName)     = get_time_to_half_max_integral(metrics.integrals_ktr(:,1:endFrame), FramesPerHour, StimulationTimePoint);
+%                endFrame = min(96+StimulationTimePoint, size(metrics.integrals_ktr,2));
+                endFrame = min(96, size(metrics.integrals_ktr,2));
+                   %here '1' instead of 'StimulationTimePoint', because size of pos integrals already only includes values from StimulationTimePoint onwards
+                features.(featName)     = get_time_to_half_max_integral(metrics.integrals_ktr(:,1:endFrame), FramesPerHour, 1);
             case{'max_pk1_speed_nfkb'}
                 features.(featName)     = get_max_pk1_speed(metrics.pk1_time_nfkb, metrics.derivatives_nfkb, FramesPerHour, StimulationTimePoint);
             case{'max_pk1_speed_ktr'}
