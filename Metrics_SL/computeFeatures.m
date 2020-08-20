@@ -17,7 +17,7 @@ expectedFlags = {'on','off'};
 addParameter(p,'Verbose','on', @(x) any(validatestring(x,expectedFlags)));%checks whether optional name-value argument matches on or off %checks if x matches expectedFlags
 valid_conv = @(x) assert(isnumeric(x)&&(x>=0)&&(length(x)==1),...
     'Parameter must be single integer >= 0'); %checks whether parameters below are single integers
-% addParameter(p,'ConvectionShift',1, valid_conv); %allows adjustment of convection shift (?)
+addParameter(p,'ConvectionShift',1, valid_conv); %allows adjustment of convection shift (?)
 addParameter(p,'MinLifetime',109, @isnumeric); %allows adjustment of minimum lifetime (?)
 addParameter(p,'MinSize',90, valid_conv); %allows adjustment of minimum size (?)
 addParameter(p,'TrimFrame',157, @isnumeric);
@@ -70,8 +70,7 @@ if isempty(p.Results.metrics)
 else
     metrics = p.Results.metrics;
 end
-%todo call funcitons providing multiple metrics (eg get_peak_stat_list), (if they are requried by Feature List)
-% so they're only called once
+
 %todo adjust these inputs to my own fuctions
 %get_peak_stat_list
 if any(ismember(FeatureList, PeakStatsList))
@@ -182,7 +181,10 @@ for j = 1:length(FeatureList)
                 features.(featName)     = pos_integral_features_ktr.(featName);
                 
                 %todo figure out what's up with last_falltime in Ade's code and whether I need it
-%           case{'last_falltime'}
+           case{'last_falltime_nfkb'}
+               features.(featName) = get_last_falltime(metrics.time_series_nfkb(:,StimulationTimePoint:end),metrics.responder_index_nfkb, false, 'Threshold',0.2);
+           case{'last_falltime_ktr'}
+               features.(featName) = get_last_falltime(metrics.time_series_ktr(:,StimulationTimePoint:end),metrics.responder_index_nfkb,  false, 'Threshold',0.2);
 %PeakStats            
             case PeakStatsList
                 if contains(featName, 'nfkb') 

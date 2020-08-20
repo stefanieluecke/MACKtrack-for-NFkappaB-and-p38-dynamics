@@ -696,32 +696,31 @@ off_pad = FramesPerHour; % Signal time added to trajectory in  FFT calculation (
 Fs = 1/300;
 depth = max(metrics.off_times_ktr)*FramesPerHour;
 NFFT = 2^nextpow2(depth); % Next power of 2 from chosen depth
-aux.ktr.fft = zeros(size(metrics.time_series_ktr,1),NFFT/2+1);
-aux.ktr.freq = Fs/2*linspace(0,1,NFFT/2+1);
-aux.ktr.power = zeros(size(aux.ktr.fft));
+aux.fft = zeros(size(metrics.time_series_ktr,1),NFFT/2+1);
+aux.freq = Fs/2*linspace(0,1,NFFT/2+1);
+aux.power = zeros(size(aux.fft));
 
 for i = 1:size(metrics.time_series_ktr,1)
     if(metrics.off_times_ktr(i)>0) %only calculate peakfreq if offtime is not 0
         y = metrics.time_series_ktr(i,StimulationTimePoint:(depth+StimulationTimePoint));
 %       y = metrics.time_series_ktr(i,1:depth);
         %todo see if I need to increase padding due to very strict padding
-        %todo why don't we use the entire trajectory?
         off_frame = min([length(y), metrics.off_times_ktr(i)*FramesPerHour+1+off_pad]); % (Pad w/ 1 extra hr of content)
         y(off_frame:end) = nan;
         y(isnan(y)) = [];
         y = y-nanmean(y);
         if ~isempty(y)
             Y = fft(y,NFFT)/length(y);
-            aux.ktr.fft(i,:) = abs(Y(1:NFFT/2+1));
-            aux.ktr.power(i,:) = abs(Y(1:NFFT/2+1).^2);
+            aux.fft(i,:) = abs(Y(1:NFFT/2+1));
+            aux.power(i,:) = abs(Y(1:NFFT/2+1).^2);
         end
     end
 end
 
 % Find the point of peak (secondary) power
-metrics.peakfreq_ktr = nan(size(aux.ktr.power,1),1);
+metrics.peakfreq_ktr = nan(size(aux.power,1),1);
 for i =1:size(metrics.time_series_ktr,1)
-    [pks,locs] = globalpeaks(aux.ktr.power(i,:),2);
+    [pks,locs] = globalpeaks(aux.power(i,:),2);
 %     % (Code to check this "second-harmonic" thing)
 %     if i<49
 %     figure('Position',positionfig(220,100,[6,3])),
@@ -729,7 +728,7 @@ for i =1:size(metrics.time_series_ktr,1)
 %     plot(ha(1),1:100,metrics.time_series(i,1:100))
 %     set(ha(1),'Ylim',[0 9],'XLim',[0 100],'Box','on')
 %     hold(ha(2),'on')
-%     plot(ha(2),freq, aux.ktr.power(i,:))
+%     plot(ha(2),freq, aux.power(i,:))
 %     plot(ha(2), freq(locs),pks,'o')
 %     hold(ha(2),'off')
 %     set(ha(2),'XLim',[0 2],'Box','on')
@@ -748,28 +747,28 @@ for i =1:size(metrics.time_series_ktr,1)
     %todo Why? Doesn't this bias peakfreq towards higher peakfreq?
     if length(locs)>1
         idx = max(locs(1:2));
-        metrics.peakfreq_ktr(i) = 3600*aux.ktr.freq(idx);
+        metrics.peakfreq_ktr(i) = 3600*aux.freq(idx);
     %if locs has 1 value, it takes either frequency corresponding to peak
     %or 3rd frequency (close to 0), whichever is larger
     %todo Why?  
     elseif ~isempty(locs)
-         metrics.peakfreq_ktr(i) = 3600*aux.ktr.freq(max([locs,3]));
+         metrics.peakfreq_ktr(i) = 3600*aux.freq(max([locs,3]));
     %if no peaks, peakfreq is 0
     else
-        metrics.peakfreq_ktr(i) = 3600*aux.ktr.freq(1);
+        metrics.peakfreq_ktr(i) = 3600*aux.freq(1);
     end
 end
 %%
-% Find total oscillatory content of particular cells (using thresholds from 0.38 to 4 hrs^(-1))
+% Find total oscillatory content of particular cells (using thresholds from 0.35 to 0.7 hrs^(-1))
 
 %20200819 Adjust thresholds for expected frequency range in KTR
-freq_thresh = aux.ktr.freq( (aux.ktr.freq >= (0.38/3600)) & (aux.ktr.freq <= (4/3600)));
-%freq_thresh = aux.ktr.freq( (aux.ktr.freq >= (0.35/3600)) & (aux.ktr.freq <= (0.7/3600)));
+freq_thresh = aux.freq( (aux.freq >= (0.38/3600)) & (aux.freq <= (4/3600)));
+%freq_thresh = aux.freq( (aux.freq >= (0.35/3600)) & (aux.freq <= (0.7/3600)));
 
-metrics.oscfrac_ktr = nan(size(aux.ktr.power,1),length(freq_thresh));
+metrics.oscfrac_ktr = nan(size(aux.power,1),length(freq_thresh));
 for j = 1:length(freq_thresh)
     for i =1:size(metrics.time_series_ktr,1)
-        metrics.oscfrac_ktr(i,j) = nansum(aux.ktr.power(i,aux.ktr.freq >= freq_thresh(j))) /nansum(aux.ktr.power(i,:));
+        metrics.oscfrac_ktr(i,j) = nansum(aux.power(i,aux.freq >= freq_thresh(j))) /nansum(aux.power(i,:));
         if isnan(metrics.oscfrac_ktr(i,j))
             metrics.oscfrac_ktr(i,j) = 0;
         end
@@ -825,14 +824,14 @@ metrics.pk2_time_ktr = (metrics.pk2_time_ktr-StimulationTimePoint)/FramesPerHour
 %% KTR METRICS OF DURATION
 % Envelope width: maximum consecutive time above a threshold (envelope must begin within 1st 6 hrs)
 smoothed2 = smoothrows(metrics.time_series_ktr,5);
-%aux.ktr.thresholds = linspace(0, OnThreshKTR*3, 40);
+%aux.thresholds = linspace(0, OnThreshKTR*3, 40);
 upperThresh = 0.28;
 %20200606 temp make threshold lower to test CC calc (make sure less 0) in metrics
 %upperThresh = 0.4;
-aux.ktr.thresholds = linspace(0, upperThresh, 25);
-metrics.envelope_ktr = zeros(size(metrics.time_series_ktr,1),length(aux.ktr.thresholds));
-for j = 1:length(aux.ktr.thresholds)
-    thresholded = smoothed2(:,StimulationTimePoint:end)>aux.ktr.thresholds(j); %consider only TP after stimulation
+aux.thresholds = linspace(0, upperThresh, 25);
+metrics.envelope_ktr = zeros(size(metrics.time_series_ktr,1),length(aux.thresholds));
+for j = 1:length(aux.thresholds)
+    thresholded = smoothed2(:,StimulationTimePoint:end)>aux.thresholds(j); %consider only TP after stimulation
     for i = 1:size(thresholded,1)
         curr = 1;
         idx_start = 1;
@@ -858,10 +857,10 @@ metrics.envelope_ktr = metrics.envelope_ktr/FramesPerHour;
 
 
 % Number of frames above a given threshold
-metrics.duration_ktr = zeros(size(metrics.time_series_ktr,1),length(aux.ktr.thresholds));
+metrics.duration_ktr = zeros(size(metrics.time_series_ktr,1),length(aux.thresholds));
 %only include TP from stimualtions onwards
-for i = 1:length(aux.ktr.thresholds)
-    metrics.duration_ktr(:,i) = nansum(smoothed(:,StimulationTimePoint:end)>aux.ktr.thresholds(i),2)/FramesPerHour;
+for i = 1:length(aux.thresholds)
+    metrics.duration_ktr(:,i) = nansum(smoothed(:,StimulationTimePoint:end)>aux.thresholds(i),2)/FramesPerHour;
 end
 
 %% KTR METRICS OF DURATION using sigma thresholds
@@ -870,10 +869,10 @@ smoothed2 = smoothrows(metrics.time_series_ktr,5);
 smoothed2_by_sigma= smoothed2./baseline_stdv_ktr;
 %todo pick proper threshold
 upperThresh = 16.65;
-aux.ktr.thresholds = linspace(0, upperThresh, 25);
-metrics.envelope_sigma_ktr = zeros(size(metrics.time_series_ktr,1),length(aux.ktr.thresholds));
-for j = 1:length(aux.ktr.thresholds)
-    thresholded = smoothed2_by_sigma(:,StimulationTimePoint:end)>aux.ktr.thresholds(j); %consider only TP after stimulation
+aux.thresholds = linspace(0, upperThresh, 25);
+metrics.envelope_sigma_ktr = zeros(size(metrics.time_series_ktr,1),length(aux.thresholds));
+for j = 1:length(aux.thresholds)
+    thresholded = smoothed2_by_sigma(:,StimulationTimePoint:end)>aux.thresholds(j); %consider only TP after stimulation
     for i = 1:size(thresholded,1)
         curr = 1;
         idx_start = 1;
@@ -899,10 +898,10 @@ metrics.envelope_sigma_ktr = metrics.envelope_sigma_ktr/FramesPerHour;
 
 
 % Number of frames above a given threshold
-metrics.duration_sigma_ktr = zeros(size(metrics.time_series_ktr,1),length(aux.ktr.thresholds));
+metrics.duration_sigma_ktr = zeros(size(metrics.time_series_ktr,1),length(aux.thresholds));
 %only include TP from stimualtions onwards
-for i = 1:length(aux.ktr.thresholds)
-    metrics.duration_sigma_ktr(:,i) = nansum(smoothed_by_sigma(:,StimulationTimePoint:end)>aux.ktr.thresholds(i),2)/FramesPerHour;
+for i = 1:length(aux.thresholds)
+    metrics.duration_sigma_ktr(:,i) = nansum(smoothed_by_sigma(:,StimulationTimePoint:end)>aux.thresholds(i),2)/FramesPerHour;
 end
 
 %20200714 temp need smoothed2_by_sigma in metrics output for testing

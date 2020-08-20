@@ -116,6 +116,7 @@ for k = 1:numel(viol_met_nfkb)
  %   violin_mack(violin.(viol_met_nfkb{k}), violin_spacing, 'Area', 0.05, 'YLim', [-5 15])
     axes.ax(k) = nexttile;
     violin_mack(violin.(viol_met_nfkb{k}),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
+%   violin_kernel(violin.(viol_met_nfkb{k}),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
     title([viol_met_nfkb{k},' ',num2str(viol_met_index_nfkb{k})], 'Interpreter', 'none')
     ylabel(viol_met_units_nfkb{k})
 end
@@ -173,6 +174,7 @@ for k = 1:numel(viol_met_ktr)
  %   violin_mack(violin.(viol_met_ktr{k}), violin_spacing, 'Area', 0.05, 'YLim', [-5 15])
     axes.ax(k) = nexttile;
     violin_mack(violin.(viol_met_ktr{k}),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
+%   violin_kernel(violin.(viol_met_ktr{k}),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
     title([viol_met_ktr{k},' ',num2str(viol_met_index_ktr{k})], 'Interpreter', 'none')
     ylabel(viol_met_units_ktr{k})
 end

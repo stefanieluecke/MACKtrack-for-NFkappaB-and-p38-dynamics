@@ -23,7 +23,7 @@ time_series_mod = time_series(:,StimulationTimePoint:end);
 time_series_mod=fillmissing(time_series_mod,p.Results.FillMethod, 2, 'EndValues','extrap');
 %todo test sgolay and lowess smoothing methods
 %todo find out which window size Ade used here
-smoothData = smoothdata(time_series_mod,p.Results.SmoothMethod); 
+smoothData = smoothdata(time_series_mod,2,p.Results.SmoothMethod); 
 
 %todo is Fs the same as frames per hour, if so use my parametrization
 %todo understand what FqRange does exactly

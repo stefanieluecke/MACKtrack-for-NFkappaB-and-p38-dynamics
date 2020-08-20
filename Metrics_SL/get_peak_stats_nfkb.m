@@ -19,7 +19,9 @@ addParameter (p,'min_pks',2,@isnumeric);
 addParameter (p,'max_pk_diff',35,@isnumeric);
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric);
 addParameter(p, 'FramesPerHour', 12, @isnumeric);
+
 parse (p,time_series, pk1_amp, pk2_amp,varargin{:});
+
 %time_series = p.Results.time_series;
 %pk1_amp = p.Results.pk1_amp;
 %pk2_amp = p.Results.pk2_amp;
@@ -100,6 +102,7 @@ output.cv_trough2peak_nfkb     =output.std_trough2peak_nfkb./output.mean_trough2
 output.cv_peak2trough_nfkb     =output.std_peak2trough_nfkb./output.mean_peak2trough_nfkb; 
 
 %todo compare globalpeaks used in this to the one used above
+%todo move this into metrics function, like Apeksha has
 pkAmps = [pk1_amp,pk2_amp];
 [pkWidth,pkProminence,~,~] = halfMaxWidth(time_series,pkAmps, FramesPerHour, StimulationTimePoint);
 output.pk1_width_nfkb =pkWidth(:,1); 

@@ -1,8 +1,9 @@
-function violin= violin_mack(vects, places, varargin) 
+function violin= violin_kernel(vects, places, varargin) 
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % [] = violin(vects, places, varargin) 
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % VIOLIN creates a violin plot, spacing them according to a secondary vector (e.g. doses)
+%This version uses kernel density estimate to generate violin shape
 %
 % INPUTS (required)
 % vects          1xN cell array of vectors (1-D array of object measurements)
@@ -106,8 +107,10 @@ bin_scale = bin_scale(1:length(vects));
 
 % Loop through sets, generate shapes
 for i = 1:length(vects)
+   
+    %
     if isnan(bins)
-        bin_width = 2*iqr(all)*((numel(all)/length(vects))^(-1/3))/bin_scale(i);
+       bin_width = 2*iqr(all)*((numel(all)/length(vects))^(-1/3))/bin_scale(i);
         %{
         %20200623 SL add if statement to fix erro for metrics with many 0
         if bin_width == 0
@@ -116,21 +119,26 @@ for i = 1:length(vects)
             bin_width = range(all, 'all')/15 +0.01;
         end
         %}
- 
-%todo 20200817: problem: generation of x doesn't always include upper
-%values, leading to values being cut off before at upper end
-        %20200817 add new bin determination based on Brooks bin width
-        x = linspace(prctile(all,1),prctile(all,99.5), round((prctile(all,99.5)- prctile(all,1))/bin_width));
-%        x = prctile(all,1):bin_width:prctile(all,99.5);
+    end
+   %{                     
+        x = prctile(all,1):bin_width:prctile(all,99.5);
     else
         bin_width = bins(2)-bins(1);
         x = bins(:)';
     end
-    
+    %}
     
     % Generate histogram data
-    y = hist(vects{i},x);
+    data_range = max(vects{i})- min(vects{i});
+    [y, x, bw] = ksdensity(vects{i}, 'BoundaryCorrection', 'reflection','Support', [min(vects{i})-data_range/1000,max(vects{i})+data_range/1000]);
+%  [y, x, bw] = ksdensity(vects{i}, 'BoundaryCorrection', 'reflection','Support', [min(vects{i})-0.001,max(vects{i})+0.001]);
+%    [y, x, bw] = ksdensity(vects{i}, 'Support', 'positive');
+    %[y, x, bw] = ksdensity(vects{i}, 'Support', [min(vects{i})-0.001,max(vects{i})+0.001]);
+    % [y, x, bw] = ksdensity(vects{i}, 'Support', [min(vects{i})-bin_width,max(vects{i})+bin_width]);
+    % [y, x, bw] = ksdensity(vects{i});
+    % y = hist(vects{i},x);
     
+   %{
     % Cap histogram with zero values (keep spline from spiking @ end) and interpolate to get shape
     if y(1)==0
         pos = find(y>0,1,'first');
@@ -143,19 +151,13 @@ for i = 1:length(vects)
         x((pos+1):end) = [];
     end
     
- %Here the x axis is padded to have nice tails at end of distribution
- %This can lead to data giving the impression of having values they don't have
- %20200817 Remove this for now
-%    x = [min(x)-bin_width, x, max(x)+bin_width];
-%    y = [0 y/sum(y) 0];
-    y = y/sum(y);
+    x = [min(x)-bin_width, x, max(x)+bin_width];
+    y = [0 y/sum(y) 0];
     
     
     
     if strcmpi(p.Results.Smoothing,'on')
-     %20200817 add new bin_width
-        xx = linspace(min(x),max(x), round((prctile(all,99.5)- prctile(all,1))/bin_width)*10);
-%       xx = min(x):bin_width/10:max(x);
+        xx = min(x):bin_width/10:max(x);
         yy = spline(x, y, xx);
         yy(yy<0) = 0;
     else
@@ -163,7 +165,8 @@ for i = 1:length(vects)
         yy = repmat(y,2,1);
         yy = yy(:)';
     end
-    
+    %}
+   %{
     %(optionally) show subplot of bins+spline fit
     if strcmp(p.Results.ShowBins,'on')
         hold(ha(i),'on')
@@ -172,7 +175,7 @@ for i = 1:length(vects)
         plot(ha(i),xx,yy,'LineWidth',2,'Color',[0 0 0])
         hold(ha(i),'off')
     end
-    
+    %}
     % Scale shape width so total area is consistent
     obj_width = p.Results.Area*tot_area/(sum(y)*diff(x(1:2))*2);
 
@@ -186,18 +189,19 @@ for i = 1:length(vects)
     end
     
     hold(violin,'on')
-    fill([places(i)+obj_width*yy,places(i)-obj_width*yy(end:-1:1)],[xx,xx(end:-1:1)],...
+    fill([places(i)+obj_width*y,places(i)-obj_width*y(end:-1:1)],[x,x(end:-1:1)],...
         colors{mod(i-1,length(colors))+1},'LineWidth',1,'Parent',violin,'LineStyle',lnstyl,'LineWidth',lnwid,...
         'EdgeColor',[0.4431 0.4510 0.4627])
 
-    
+    %
     %indicate "mode', ie bin with most values
     if strcmpi(p.Results.Mode,'on')
-        [~, x_idx] = max(yy);
-        line(violin, [(places(i)-max(obj_width*yy)), (places(i)+max(obj_width*yy))], [xx(x_idx), xx(x_idx)], 'Color', 'white', 'LineStyle', ':','LineWidth',1.5);
+        [~, x_idx] = max(y);
+        line(violin, [(places(i)-max(obj_width*y)), (places(i)+max(obj_width*y))], [x(x_idx), x(x_idx)], 'Color', 'white', 'LineStyle', ':','LineWidth',1.5);
  %       [~, x_idx] = max(y);
   %      line(violin, [(places(i)-max(obj_width*yy)), (places(i)+max(obj_width*yy))], [x(x_idx), x(x_idx)], 'Color', 'white', 'LineStyle', '--','LineWidth',1.5);
     end
+        %}
     
     hold(violin,'off')
 end
@@ -216,6 +220,17 @@ end
 hold(violin,'off')
 
 %todo test SL 20200810, extend ylim by bin width, so that entire smoothed plot can be seen
-ylim(1) = ylim(1)-bin_width;
-ylim(2) = ylim(2)+bin_width;
+ylim(1) = ylim(1)-bw;
+ylim(2) = ylim(2)+bw;
+%ylim(1) = ylim(1)-bin_width;
+%ylim(2) = ylim(2)+bin_width;
+%ylim(1) = ylim(1);
+%ylim(2) = ylim(2);
+
 set(violin,'YLim',ylim,'XLim',x_lim);
+
+
+
+
+
+
