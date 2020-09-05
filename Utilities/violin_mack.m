@@ -108,7 +108,7 @@ bin_scale = bin_scale(1:length(vects));
 for i = 1:length(vects)
     if isnan(bins)
         bin_width = 2*iqr(all)*((numel(all)/length(vects))^(-1/3))/bin_scale(i);
-        %{
+        %
         %20200623 SL add if statement to fix erro for metrics with many 0
         if bin_width == 0
             %todo improve on this definition of bin_width, goal: have it

@@ -101,6 +101,7 @@ output.std_peak2trough_nfkb    =nanstd(output.peak2trough_nfkb,[],2);
 output.cv_trough2peak_nfkb     =output.std_trough2peak_nfkb./output.mean_trough2peak_nfkb;
 output.cv_peak2trough_nfkb     =output.std_peak2trough_nfkb./output.mean_peak2trough_nfkb; 
 
+%{
 %todo compare globalpeaks used in this to the one used above
 %todo move this into metrics function, like Apeksha has
 pkAmps = [pk1_amp,pk2_amp];
@@ -109,7 +110,7 @@ output.pk1_width_nfkb =pkWidth(:,1);
 output.pk2_width_nfkb =pkWidth(:,2); 
 output.pk1_prom_nfkb = pkProminence(:,1); 
 output.pk2_prom_nfkb = pkProminence(:,2); 
-
+%}
 end
 
 

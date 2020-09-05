@@ -173,7 +173,7 @@ end
 
 %}
 
-%{
+%
 %% Percent oscillators plot
 
 osc_cat(n).nfkb = [];
@@ -230,7 +230,61 @@ legend({'NFkB', 'KTR'}, 'Location', 'northwest')
 ylabel('Oscillating cells [%]')
 xlabel('Experiment ID')
 
+%% Percent oscillators plot, using normalized Peakfreq
 
+osc_cat_norm(n).nfkb = [];
+osc_cat_norm(n).ktr = [];
+for i = 1:n
+osc_cat_norm(i).nfkb    =  get_osc_cats(ID(i).metrics.peakfreq_norm_nfkb,ID(i).metrics.off_times_nfkb,'cutoff_fq', 0.42);
+%todo find proper frequency threshold for KTR
+osc_cat_norm(i).ktr    =  get_osc_cats(ID(i).metrics.peakfreq_norm_ktr,ID(i).metrics.off_times_ktr,'cutoff_fq', 0.42);            
+end
+
+osc_perc_nfkb = nan(1,n);
+osc_perc_ktr = nan(1,n);
+
+%calculate %oscillators of total 
+switch p.Results.FilterResponders 
+    case 'none'
+        for i = 1:n
+        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc'))/numel(osc_cat_norm(i).nfkb);
+        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc'))/numel(osc_cat_norm(i).ktr);
+        end
+    case 'both'
+        for i = 1:n
+        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).nfkb((ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 )));
+        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).ktr((ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 )));
+        end
+    case 'ktr'
+        for i = 1:n
+        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).nfkb( ID(i).metrics.responder_index_ktr == 1 ));
+        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).ktr(ID(i).metrics.responder_index_ktr == 1 ));
+        end
+    case 'nfkb'
+        for i = 1:n
+        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 ))/numel(osc_cat_norm(i).nfkb( ID(i).metrics.responder_index_nfkb == 1 ));
+        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_index_nfkb == 1 ))/numel(osc_cat_norm(i).ktr(ID(i).metrics.responder_index_nfkb == 1 ));
+        end
+    case 'respective'
+        for i = 1:n
+        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 ))/numel(osc_cat_norm(i).nfkb( ID(i).metrics.responder_index_nfkb == 1 ));
+        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).ktr(ID(i).metrics.responder_index_ktr == 1 ));
+        end
+end       
+data_for_osc_bar = [osc_perc_nfkb;osc_perc_ktr];
+
+figure
+b = bar(data_for_osc_bar', 'FaceColor', 'flat');
+colors = setcolors;
+for i = 1:n
+    b(1).CData(i,:) = colors.doses{i};
+    b(2).CData(i,:) = colors.dosesDarker{i};
+end
+set(gca, 'XTick', 1:n,'XTickLabels', {IDs});
+title('Oscillators using norm. peakfreq[%]')
+legend({'NFkB', 'KTR'}, 'Location', 'northwest')
+ylabel('Oscillating cells [%]')
+xlabel('Experiment ID')
 
 %% Percent responder plot
 

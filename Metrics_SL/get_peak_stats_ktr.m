@@ -96,6 +96,7 @@ output.std_peak2trough_ktr    =nanstd(output.peak2trough_ktr,[],2);
 output.cv_trough2peak_ktr     =output.std_trough2peak_ktr./output.mean_trough2peak_ktr;
 output.cv_peak2trough_ktr     =output.std_peak2trough_ktr./output.mean_peak2trough_ktr; 
 
+%{
 %todo compare globalpeaks used in this to the one used above
 pkAmps = [pk1_amp,pk2_amp];
 [pkWidth,pkProminence,~,~] = halfMaxWidth(time_series,pkAmps, FramesPerHour, StimulationTimePoint);
@@ -103,5 +104,5 @@ output.pk1_width_ktr =pkWidth(:,1);
 output.pk2_width_ktr =pkWidth(:,2); 
 output.pk1_prom_ktr = pkProminence(:,1); 
 output.pk2_prom_ktr = pkProminence(:,2); 
-
+%}
 end

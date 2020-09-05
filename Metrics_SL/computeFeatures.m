@@ -88,7 +88,7 @@ end
 if any(ismember(FeatureList, {'integrals_pos_nfkb','time2HalfMaxPosIntegral_nfkb','max_pos_integral_nfkb',...
                     'integrals_pos_ktr','time2HalfMaxPosIntegral_ktr', 'max_pos_integral_ktr'}))
    % endFrame = min(96+StimulationTimePoint, size(metrics.integrals_nfkb-StimulationTimePoint,2));
-     endFrame = min(96, size(metrics.integrals_nfkb,2));
+   endFrame = min(96, size(metrics.integrals_nfkb,2));
     pos_integral_features_nfkb = get_pos_integrals_nfkb(metrics.integrals_nfkb, FramesPerHour, endFrame);
     pos_integral_features_ktr = get_pos_integrals_ktr(metrics.integrals_ktr, FramesPerHour, endFrame);
 
@@ -118,15 +118,15 @@ for j = 1:length(FeatureList)
             case{'max_amplitude_nfkb','max_integral_nfkb','max_derivative_nfkb','min_derivative_nfkb',...
                     'max_amplitude_ktr','max_integral_ktr','max_derivative_ktr','min_derivative_ktr'}
                 features.(featName) = metrics.(featName);
-            case{'peakfreq_nfkb', 'peakfreq_ktr'}
+            case{'peakfreq_nfkb', 'peakfreq_ktr', 'peakfreq_norm_nfkb', 'peakfreq_norm_ktr'}
                 features.(featName) = metrics.(featName);
             case{'intwin1_nfkb', 'intwin3_nfkb', 'intwin1_ktr','intwin3_ktr'}
                 features.(featName) = metrics.(featName);
          %todo osc_frac from basic metrics function, pick threshold or replace entirely with osc_cat?
-            case{'oscfrac_nfkb', 'oscfrac_ktr'}
+            case{'oscfrac_nfkb', 'oscfrac_ktr', 'oscfrac_norm_nfkb', 'oscfrac_norm_ktr'}
                 features.(featName) = metrics.(featName);
-            case{'pk1_time_nfkb','pk1_amp_nfkb','pk2_time_nfkb','pk2_amp_nfkb',...
-                    'pk1_time_ktr','pk1_amp_ktr','pk2_time_ktr','pk2_amp_ktr'}
+            case{'pk1_time_nfkb','pk1_amp_nfkb','pk2_time_nfkb','pk2_amp_nfkb','pk1_prom_nfkb','pk2_prom_nfkb','pk1_height_nfkb','pk2_height_nfkb','pk1_width_nfkb','pk2_width_nfkb',...
+                    'pk1_time_ktr','pk1_amp_ktr','pk2_time_ktr','pk2_amp_ktr','pk1_prom_ktr','pk2_prom_ktr','pk1_height_ktr','pk2_height_ktr','pk1_width_ktr','pk2_width_ktr'}
                 features.(featName) = metrics.(featName);
 %todo confirm envelope and duration thresholds are implemented
             case{'envelope_nfkb','duration_nfkb'}
@@ -170,9 +170,13 @@ for j = 1:length(FeatureList)
                 features.(featName)     = get_max_pk1_speed(metrics.pk1_time_ktr, metrics.derivatives_ktr, FramesPerHour, StimulationTimePoint);
             case {'osc_cats_nfkb'}
                  features.(featName)    =  get_osc_cats(metrics.peakfreq_nfkb,metrics.off_times_nfkb,'cutoff_fq', 0.42);
+            case {'osc_cats_norm_nfkb'}
+                 features.(featName)    =  get_osc_cats(metrics.peakfreq_norm_nfkb,metrics.off_times_nfkb,'cutoff_fq', 0.42);
 %todo find proper frequency threshold for KTR
             case {'osc_cats_ktr'}
-                 features.(featName)    =  get_osc_cats(metrics.peakfreq_ktr,metrics.off_times_ktr,'cutoff_fq', 0.42);
+                 features.(featName)    =  get_osc_cats(metrics.peakfreq_ktr,metrics.off_times_ktr,'cutoff_fq', 0.35);
+            case {'osc_cats_norm_ktr'}
+                 features.(featName)    =  get_osc_cats(metrics.peakfreq_norm_ktr,metrics.off_times_ktr,'cutoff_fq', 0.35);
            
             case{'integrals_pos_nfkb','time2HalfMaxPosIntegral_nfkb','max_pos_integral_nfkb'}
                 features.(featName)     = pos_integral_features_nfkb.(featName);

@@ -1,6 +1,7 @@
 function [HMW,Prominence, Amp, Locs] = halfMaxWidth(time_series, PeakHeight, FPH, StimulationTimePoint)
 %--------------------------------------------------------------------------
 %[HMW,Prominence, Amp, Locs] = halfMaxWidth(time_series, PeakHeight)
+%20200826: not used anymore; width, prominence, and height calculated in metrics function instead
 %--------------------------------------------------------------------------
 %todo adjust to new StimulationTimePoint!
 % if isrow(PeakHeight)
