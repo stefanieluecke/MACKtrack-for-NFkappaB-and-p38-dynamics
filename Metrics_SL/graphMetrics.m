@@ -46,8 +46,6 @@ ID(n).metrics = [];
 ID(n).graph = [];
 ID(n).info = [];
 
-figure
-tiledlayout(4,round(numel(viol_met_nfkb)/2)) %looks best when using even number of metrics/features
 
 % Metrics for NFkB
 %run metrics function of desired exp ID
@@ -57,8 +55,13 @@ for i= 1:n
                             'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
                             p.Results.Verbose, 'TrimFrame', p.Results.TrimFrame, 'StimulationTimePoint', p.Results.StimulationTimePoint);
 end
-%%
-%
+%% NFKB Metrics
+%{
+
+figure
+tiledlayout(4,round(numel(viol_met_nfkb)/2)) %looks best when using even number of metrics/features
+
+
 switch p.Results.FilterResponders 
     case 'none'
        for i = 1:n
@@ -112,9 +115,10 @@ for k = 1:numel(viol_met_nfkb)
     title([viol_met_nfkb{k},' ',num2str(viol_met_index_nfkb{k})], 'Interpreter', 'none')
     ylabel(viol_met_units_nfkb{k})
 end
+%}
 
 %% KTR metrics
-
+%{
 %figure
 %tiledlayout(2,round(numel(viol_met)/2))
 
@@ -175,7 +179,7 @@ end
 
 %
 %% Percent oscillators plot
-
+%{
 osc_cat(n).nfkb = [];
 osc_cat(n).ktr = [];
 for i = 1:n
@@ -230,8 +234,9 @@ legend({'NFkB', 'KTR'}, 'Location', 'northwest')
 ylabel('Oscillating cells [%]')
 xlabel('Experiment ID')
 
+%}
 %% Percent oscillators plot, using normalized Peakfreq
-
+%{
 osc_cat_norm(n).nfkb = [];
 osc_cat_norm(n).ktr = [];
 for i = 1:n
@@ -250,7 +255,7 @@ switch p.Results.FilterResponders
         osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc'))/numel(osc_cat_norm(i).nfkb);
         osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc'))/numel(osc_cat_norm(i).ktr);
         end
-    case 'both'
+    case 'both' 
         for i = 1:n
         osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).nfkb((ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 )));
         osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).ktr((ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 )));
@@ -285,7 +290,7 @@ title('Oscillators using norm. peakfreq[%]')
 legend({'NFkB', 'KTR'}, 'Location', 'northwest')
 ylabel('Oscillating cells [%]')
 xlabel('Experiment ID')
-
+%}
 %% Percent responder plot
 
 data_for_resp_nfkb = nan(1,n);
@@ -323,6 +328,8 @@ for i = 1:n
     responders(i).dual  = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 1 & ID(i).metrics.responder_index_nfkb == 1))/numel(ID(i).metrics.responder_index_nfkb);
     responders(i).non   = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 0 & ID(i).metrics.responder_index_nfkb == 0))/numel(ID(i).metrics.responder_index_nfkb);
 end
+
+%{
 figure
 
 p1 = plot(1:n,[responders.nfkb], '-o');
@@ -351,6 +358,7 @@ legend({'NFkB only', 'KTR only', 'Non-Responders', 'Dual Responders'}, 'Location
 ylabel('Responder Fraction [%]')
 xlabel('Experiment ID')
 hold off
+%}
 
 figure
 data_for_resp_cat_bar=[responders(1:n).non;responders(1:n).dual; responders(1:n).nfkb; responders(1:n).ktr]; 

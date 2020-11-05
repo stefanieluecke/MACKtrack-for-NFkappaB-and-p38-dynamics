@@ -1,4 +1,4 @@
-function output= get_peak_stats_nfkb(time_series,pk1_amp, pk2_amp, varargin)
+function output= get_peak_stats_nfkb(time_series,baseline_stdv, varargin)
 
 %Calculates peak statistics
 %--------------------------------------------------------------------------
@@ -12,15 +12,14 @@ p=inputParser;
 %addRequired(p,'pk2_amp', @isstruct);
 
 addRequired(p,'time_series');
-addRequired(p,'pk1_amp');
-addRequired(p,'pk2_amp');
+addRequired(p,'baseline_stdv');
 
 addParameter (p,'min_pks',2,@isnumeric);
 addParameter (p,'max_pk_diff',35,@isnumeric);
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric);
 addParameter(p, 'FramesPerHour', 12, @isnumeric);
 
-parse (p,time_series, pk1_amp, pk2_amp,varargin{:});
+parse (p,time_series, baseline_stdv, varargin{:});
 
 %time_series = p.Results.time_series;
 %pk1_amp = p.Results.pk1_amp;
@@ -34,7 +33,7 @@ StimulationTimePoint = p.Results.StimulationTimePoint;
 %todo adjust these for new starting timepoint
 %todo check for any differences between Ade's and Brooks' nfkbpeaks
 %todo check fi these parameters work for me
-[output.peak_times_nfkb,output.peak_amps_nfkb, output.valley_times_nfkb, output.valley_amps_nfkb]=nfkbpeaks(time_series(:, StimulationTimePoint:end), 'BeginFrame',3,'MinHeight',0.75,'MinDist',6);
+[output.peak_times_nfkb,output.peak_amps_nfkb, output.valley_times_nfkb, output.valley_amps_nfkb]=nfkbpeaks(time_series(:, StimulationTimePoint:end), baseline_stdv,'BeginFrame',3,'MinHeight',0.75,'MinDist',4, 'SmoothSize',1);
 ipt=diff(output.peak_times_nfkb,1,2);
 
 %%
@@ -70,6 +69,7 @@ output.cv_peak_amp_nfkb     = output.std_peak_amp_nfkb./output.mean_peak_amp_nfk
 % output.peak2trough(:,1:2:end) = peak2trough; 
 % output.peak2trough(:, 2:2:end) = output.peak_amps(:,2:end)-output.valley_amps;
 
+%todo understand the calculation of these metrics!
 output.peak2trough_nfkb     = output.peak_amps_nfkb(:,1:end-1)-output.valley_amps_nfkb;
 minVals = zeros(size(time_series,1),1);
 for row=1:size(minVals,1)

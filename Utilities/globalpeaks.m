@@ -20,6 +20,8 @@ function [peaks, locs, HMW, prom, heights] = globalpeaks(vect, num_peaks)
 
 % Find all peaks in vector; 1st global peak is maximum value overall
 [all_peaks, all_locs, all_HMW, all_prom] = findpeaks(vect, 'WidthReference', 'halfheight');
+%testing 20200923 get visual output
+%findpeaks(vect, 'WidthReference', 'halfheight', 'Annotate', 'extents');
 all_peaks(((all_locs==1)) | (all_locs==length(vect)) ) = [];
 all_HMW(((all_locs==1)) | (all_locs==length(vect)) ) = [];
 all_prom(((all_locs==1)) | (all_locs==length(vect)) ) = [];

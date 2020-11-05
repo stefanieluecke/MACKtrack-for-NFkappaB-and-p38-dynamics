@@ -32,7 +32,8 @@ addParameter(p, 'FramesPerHour', 12, @isnumeric)
 
 
 % Optional parameters to be passed used in computeFeature function
-addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
+%addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
+addParameter(p, 'FeatureListFile', 'D:\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
 addParameter(p, 'FeatureListTable', []);
 addParameter(p, 'metrics', []);
 
@@ -74,8 +75,8 @@ end
 %todo adjust these inputs to my own fuctions
 %get_peak_stat_list
 if any(ismember(FeatureList, PeakStatsList))
-    peak_stats_nfkb =get_peak_stats_nfkb(metrics.time_series_nfkb, metrics.pk1_amp_nfkb, metrics.pk2_amp_nfkb, 'FramesPerHour', FramesPerHour, 'StimulationTimePoint', StimulationTimePoint);
-    peak_stats_ktr =get_peak_stats_ktr(metrics.time_series_ktr, metrics.pk1_amp_ktr, metrics.pk2_amp_ktr, 'FramesPerHour',FramesPerHour, 'StimulationTimePoint', StimulationTimePoint);
+    peak_stats_nfkb =get_peak_stats_nfkb(metrics.time_series_nfkb, metrics.baseline_stdv_nfkb, 'FramesPerHour', FramesPerHour, 'StimulationTimePoint', StimulationTimePoint);
+    peak_stats_ktr =get_peak_stats_ktr(metrics.time_series_ktr, metrics.baseline_stdv_ktr, 'FramesPerHour',FramesPerHour, 'StimulationTimePoint', StimulationTimePoint);
 end
 
 %sig_stats
@@ -115,8 +116,8 @@ for j = 1:length(FeatureList)
             case{'baseline_nfkb','responder_index_nfkb','off_times_nfkb',...
                     'baseline_ktr','responder_index_ktr','off_times_ktr'}
                 features.(featName) = metrics.(featName);
-            case{'max_amplitude_nfkb','max_integral_nfkb','max_derivative_nfkb','min_derivative_nfkb',...
-                    'max_amplitude_ktr','max_integral_ktr','max_derivative_ktr','min_derivative_ktr'}
+            case{'max_amplitude_nfkb','max_amplitude_4h_nfkb','max_integral_nfkb','max_derivative_nfkb','min_derivative_nfkb',...
+                    'max_amplitude_ktr','max_amplitude_4h_ktr','max_integral_ktr','max_derivative_ktr','min_derivative_ktr'}
                 features.(featName) = metrics.(featName);
             case{'peakfreq_nfkb', 'peakfreq_ktr', 'peakfreq_norm_nfkb', 'peakfreq_norm_ktr'}
                 features.(featName) = metrics.(featName);

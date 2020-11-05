@@ -173,10 +173,7 @@ metrics.max_amplitude_nfkb = nanmax(metrics.time_series_nfkb(:,StimulationTimePo
 
 %20200831 Testing shorter timeframe for max amplitude
 %todo decide on timeframe
-metrics.max_amplitude_2h_nfkb = nanmax(metrics.time_series_nfkb(:,StimulationTimePoint:24+StimulationTimePoint),[],2);
 metrics.max_amplitude_4h_nfkb = nanmax(metrics.time_series_nfkb(:,StimulationTimePoint:48+StimulationTimePoint),[],2);
-metrics.max_amplitude_6h_nfkb = nanmax(metrics.time_series_nfkb(:,StimulationTimePoint:72+StimulationTimePoint),[],2);
-metrics.max_amplitude_8h_nfkb = nanmax(metrics.time_series_nfkb(:,StimulationTimePoint:96+StimulationTimePoint),[],2);
 
 metrics.max_integral_nfkb = nanmax(metrics.integrals_nfkb,[],2);
 metrics.max_derivative_nfkb = nanmax(metrics.derivatives_nfkb(:,StimulationTimePoint:end),[],2);
@@ -395,12 +392,18 @@ for i=1:length(pk_feats)
     metrics.(pk_feats{i}) = nan(size(metrics.time_series_nfkb,1),1);
 end
 
-for i = 1:size(metrics.pk1_time_nfkb,1)    
+for i = 1:size(metrics.pk1_time_nfkb,1)
+    
+    %todo testing if smoothing is helpful
+    %smoothing of trajectories
+ %   metrics.time_series_smoothed_nfkb = smoothrows(metrics.time_series_nfkb,3);
+    
   %  [pks, locs] =  globalpeaks(metrics.time_series_nfkb(i,1:min([90,p.Results.MinLifetime])),5);
     %todo check if I want to stick with 90 TPs (7.5 h, ie 6.5 h + before
     %stimulation), test shorter times
   %  %20200617 test to include more peaks because of more filtering
-    [pks_nfkb, locs_nfkb, width_nfkb, prom_nfkb, heights_nfkb] = globalpeaks(metrics.time_series_nfkb(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),5);
+%    [pks_nfkb, locs_nfkb, width_nfkb, prom_nfkb, heights_nfkb] = globalpeaks(metrics.time_series_smoothed_nfkb(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),5);
+     [pks_nfkb, locs_nfkb, width_nfkb, prom_nfkb, heights_nfkb] = globalpeaks(metrics.time_series_nfkb(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),10);
 %    [pks_nfkb, locs_nfkb, width_nfkb, prom_nfkb, heights_nfkb] = globalpeaks(metrics.time_series_nfkb(i,1:min([96+StimulationTimePoint,p.Results.MinLifetime])),5);
 %    [pks_nfkb, locs_nfkb, width_nfkb, prom_nfkb, heights_nfkb] = globalpeaks(metrics.time_series_nfkb(i,1:min([90,p.Results.MinLifetime])),5);
     % Supress any peaks that are within 6 frames of each other.
@@ -412,6 +415,7 @@ for i = 1:size(metrics.pk1_time_nfkb,1)
         tmp = tmp + (pks_nfkb(tmp)>=pks_nfkb(tmp+1));
         pks_nfkb(tmp) = []; locs_nfkb(tmp) = []; width_nfkb(tmp) = []; prom_nfkb(tmp) = []; heights_nfkb(tmp) = [];
     end
+    
     pks_nfkb(locs_nfkb<(StimulationTimePoint + 1)) = [];
     width_nfkb(locs_nfkb<(StimulationTimePoint + 1)) = [];
     prom_nfkb(locs_nfkb<(StimulationTimePoint + 1)) = [];
@@ -440,6 +444,14 @@ for i = 1:size(metrics.pk1_time_nfkb,1)
     prom_nfkb(heights_nfkb< 2*baseline_stdv_nfkb(i)) = [];
     heights_nfkb(heights_nfkb< 2*baseline_stdv_nfkb(i)) = [];%heights pks needs to be filtered after others
  
+%
+    %20200923 SL Testing: Filter to remove peaks that are too narrow (based on 'halfheight' width determination in globablpeaks)
+    locs_nfkb(width_nfkb< 2) = [];
+    pks_nfkb(width_nfkb< 2) = []; 
+    prom_nfkb(width_nfkb< 2) = [];
+    heights_nfkb(width_nfkb< 2)= []; 
+    width_nfkb(width_nfkb< 2)= [];%width of pks needs to be filtered last 
+  %}  
     
    if ~isempty(locs_nfkb)
         metrics.pk1_time_nfkb(i) = locs_nfkb(1);
@@ -570,10 +582,7 @@ metrics.max_amplitude_ktr = nanmax(metrics.time_series_ktr(:,StimulationTimePoin
 
 %20200831 Testing shorter timeframe for max amplitude
 %todo decide on timeframe
-metrics.max_amplitude_2h_ktr = nanmax(metrics.time_series_ktr(:,StimulationTimePoint:24+StimulationTimePoint),[],2);
 metrics.max_amplitude_4h_ktr = nanmax(metrics.time_series_ktr(:,StimulationTimePoint:48+StimulationTimePoint),[],2);
-metrics.max_amplitude_6h_ktr = nanmax(metrics.time_series_ktr(:,StimulationTimePoint:72+StimulationTimePoint),[],2);
-metrics.max_amplitude_8h_ktr = nanmax(metrics.time_series_ktr(:,StimulationTimePoint:96+StimulationTimePoint),[],2);
 
 metrics.max_integral_ktr = nanmax(metrics.integrals_ktr,[],2);
 metrics.max_derivative_ktr = nanmax(metrics.derivatives_ktr(:,StimulationTimePoint:end),[],2);
@@ -825,10 +834,17 @@ for i=1:length(pk_feats)
 end
 
 for i = 1:size(metrics.pk1_time_ktr,1)    
-  %  globalpeaks(metrics.time_series_ktr(i,1:min([90,p.Results.MinLifetime])),5);
+
+    %todo testing if smoothing is helpful
+    %smoothing of trajectories
+ %   metrics.time_series_smoothed_ktr = smoothrows(metrics.time_series_ktr,3);
+
+    
+    %  globalpeaks(metrics.time_series_ktr(i,1:min([90,p.Results.MinLifetime])),5);
     %todo check if I want to stick with 90 TPs (7.5 h, ie 6.5 h + before stimulation), test shorter time frames
   %  %20200617 test to include more peaks because of more filtering
-    [pks_ktr, locs_ktr, width_ktr, prom_ktr, heights_ktr] = globalpeaks(metrics.time_series_ktr(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),5);
+%    [pks_ktr, locs_ktr, width_ktr, prom_ktr, heights_ktr] = globalpeaks(metrics.time_series_smoothed_ktr(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),5);
+    [pks_ktr, locs_ktr, width_ktr, prom_ktr, heights_ktr] = globalpeaks(metrics.time_series_ktr(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),10);
     %    [pks_ktr, locs_ktr, width_ktr, prom_ktr, heights_ktr] = globalpeaks(metrics.time_series_ktr(i,1:min([96+StimulationTimePoint,p.Results.MinLifetime])),5);
 %    [pks_ktr, locs_ktr, width_ktr, prom_ktr, heights_ktr] = globalpeaks(metrics.time_series_ktr(i,1:min([90,p.Results.MinLifetime])),5);
     % Supress any peaks that are within 4 frames of each other. %Use min difference of 4 for KTR, 6 for NFkB  
@@ -840,6 +856,7 @@ for i = 1:size(metrics.pk1_time_ktr,1)
         tmp = tmp + (pks_ktr(tmp)>=pks_ktr(tmp+1));
         pks_ktr(tmp) = []; locs_ktr(tmp) = []; width_ktr(tmp) = []; prom_ktr(tmp) = []; heights_ktr(tmp) = [];
     end
+    
     pks_ktr(locs_ktr<(StimulationTimePoint + 1)) = [];
     width_ktr(locs_ktr<(StimulationTimePoint + 1)) = [];
     prom_ktr(locs_ktr<(StimulationTimePoint + 1)) = [];
@@ -855,6 +872,7 @@ for i = 1:size(metrics.pk1_time_ktr,1)
     prom_ktr(pks_ktr<= 0) = [];
     heights_ktr(pks_ktr<= 0) = [];
     pks_ktr(pks_ktr<= 0) = []; %pks needs to be filtered after others
+    
 %20200826 SL Testing: Filter to remove peaks with short peak prominence based on Stdv of baseline
  %testing 3*, 2*
 %    locs_ktr(prom_ktr< 2*baseline_stdv_ktr(i)) = [];
@@ -869,6 +887,13 @@ for i = 1:size(metrics.pk1_time_ktr,1)
     prom_ktr(heights_ktr< 2*baseline_stdv_ktr(i)) = [];%heights pks needs to be filtered after others
     heights_ktr(heights_ktr< 2*baseline_stdv_ktr(i)) = []; %heights pks needs to be filtered after others
 
+%20200923 SL Testing: Filter to remove peaks that are too narrow (based on 'halfheight' width determination in globablpeaks)
+    locs_ktr(width_ktr< 2) = [];
+    pks_ktr(width_ktr< 2) = []; 
+    prom_ktr(width_ktr< 2) = [];
+    heights_ktr(width_ktr< 2)= []; 
+    width_ktr(width_ktr< 2)= [];%width of pks needs to be filtered last 
+    
     
    if ~isempty(locs_ktr)
         metrics.pk1_time_ktr(i) = locs_ktr(1);

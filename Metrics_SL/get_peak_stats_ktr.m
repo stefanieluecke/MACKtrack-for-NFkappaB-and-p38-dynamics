@@ -1,4 +1,4 @@
-function output= get_peak_stats_ktr(time_series,pk1_amp, pk2_amp, varargin)
+function output= get_peak_stats_ktr(time_series,baseline_stdv, varargin)
 
 %Calculates peak statistics
 %--------------------------------------------------------------------------
@@ -9,14 +9,13 @@ p=inputParser;
 %addRequired(p,'pk2_amp', @isstruct);
 
 addRequired(p,'time_series');
-addRequired(p,'pk1_amp');
-addRequired(p,'pk2_amp');
+addRequired(p,'baseline_stdv');
 
 addParameter (p,'min_pks',2,@isnumeric);
 addParameter (p,'max_pk_diff',35,@isnumeric);
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric);
 addParameter(p, 'FramesPerHour', 12, @isnumeric);
-parse (p,time_series, pk1_amp, pk2_amp,varargin{:});
+parse (p,time_series, baseline_stdv,varargin{:});
 %time_series = p.Results.time_series;
 %pk1_amp = p.Results.pk1_amp;
 %pk2_amp = p.Results.pk2_amp;
@@ -25,14 +24,20 @@ max_pk_diff=p.Results.max_pk_diff;
 FramesPerHour = p.Results.FramesPerHour;
 StimulationTimePoint = p.Results.StimulationTimePoint;
 
+%% Peak calling and filtering
 %todo adjust nfkbpeaks parameters for KTR
 %todo adjust these for new starting timepoint!!!
 %todo check for any differences between Ade's and Brooks' nfkbpeaks
 %[output.peak_times_ktr,output.peak_amps_ktr, output.valley_times_ktr, output.valley_amps_ktr]=nfkbpeaks(time_series, 'BeginFrame',3,'MinHeight',0.75,'MinDist',6);
-[output.peak_times_ktr,output.peak_amps_ktr, output.valley_times_ktr, output.valley_amps_ktr]=nfkbpeaks(time_series(:, StimulationTimePoint:end), 'BeginFrame',3,'MinHeight',0.03,'MinDist',6);
+[output.peak_times_ktr,output.peak_amps_ktr, output.valley_times_ktr, output.valley_amps_ktr]=nfkbpeaks(time_series(:, StimulationTimePoint:end),baseline_stdv, 'BeginFrame',3,'MinHeight',0.03,'MinDist',4, 'SmoothSize',1);
+
+%Smoothing --> incl in nfkbpeaks, not in metrics
+%amount of peaks to ask globalpeaks to make
+%get valley times, valley amps
+
+%% Calculating peak features
 ipt=diff(output.peak_times_ktr,1,2);
 
-%%
 ipt(ipt>max_pk_diff)=nan;
 
 tot_pks = sum(~isnan(ipt),2)+1;
@@ -64,6 +69,9 @@ output.cv_peak_amp_ktr     = output.std_peak_amp_ktr./output.mean_peak_amp_ktr;
 % peak2trough =output.peak_amps(:,1:end-1)-output.valley_amps; 
 % output.peak2trough(:,1:2:end) = peak2trough; 
 % output.peak2trough(:, 2:2:end) = output.peak_amps(:,2:end)-output.valley_amps;
+
+
+%todo understand the calculation of these metrics!
 
 output.peak2trough_ktr     = output.peak_amps_ktr(:,1:end-1)-output.valley_amps_ktr;
 minVals = zeros(size(time_series,1),1);
