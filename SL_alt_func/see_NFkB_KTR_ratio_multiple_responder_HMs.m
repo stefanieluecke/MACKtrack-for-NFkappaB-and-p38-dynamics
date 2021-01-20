@@ -28,6 +28,7 @@ addParameter(p, 'SortMetric', 'peakfreq_nfkb');
 expectedOrder = {'ascend', 'descend'};
 addParameter(p, 'SortOrder', 'descend', @(x)any(validatestring(x, expectedOrder))); 
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
+addParameter(p, 'SortIndex', 1)
 
 expectedFilters = {'none','nfkb', 'ktr', 'both'};
 addParameter(p, 'FilterResponders','none', @(x) any(validatestring(x,expectedFilters)));%filter out non-responders or not
@@ -105,7 +106,7 @@ end
 
 %% Sort cells by sort metric
 for i= 1:n
-    [~,ID(i).graph.order] = sort(ID(i).graph.sort_metric, p.Results.SortOrder);
+    [~,ID(i).graph.order] = sort(ID(i).graph.sort_metric(1:end, p.Results.SortIndex), p.Results.SortOrder);
 end
 
 %% Plot NFkB and KTR heatmaps below each other
@@ -122,7 +123,7 @@ for i= 1:n
     ID(i).graph.opt_respHM.Name = 'Responder Status';
     ID(i).graph.opt_respHM.title = ID(i).info.name;
     axes.ax(i) = nexttile;
-    colormapStack_for_responder(ID(i).graph.responder_status(ID(i).graph.order,:),ID(i).graph.celldata(ID(i).graph.order,:), ID(i).graph.opt_respHM, fig_handle, axes.ax(i)); %calls subfunction that makes figure    
+    colormapStack_for_responder(ID(i).graph.responder_status(ID(i).graph.order,:),ID(i).graph.celldata(ID(i).graph.order,:), ID(i).graph.opt_respHM, fig_handle, axes.ax(i), SortMetric); %calls subfunction that makes figure    
 end
 
 

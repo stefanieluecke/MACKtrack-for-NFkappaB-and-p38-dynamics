@@ -30,7 +30,9 @@ if ischar(id) || isnumeric(id) % Load file if a location or row index of a sprea
         info.name = [data.save_folder{1}];
         load([locations.data,filesep,data.save_dir{1},filesep,info.name,filesep,'AllMeasurements.mat'])
         info.savename = [locations.data,filesep,data.save_dir{1},filesep,info.name,filesep,'AllMeasurements.mat'];
-
+        %20201208 addition SL
+        info.dose = data.dose;
+        
     elseif exist(num2str(id), 'file') %loads file from specified full file path
         id = namecheck(id);
         load(id)

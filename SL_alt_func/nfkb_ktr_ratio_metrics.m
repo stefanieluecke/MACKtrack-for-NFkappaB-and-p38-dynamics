@@ -50,6 +50,10 @@ valid_conv = @(x) assert(isnumeric(x)&&(x>=0)&&(length(x)==1),...
 addParameter(p,'ConvectionShift',1, valid_conv);
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
 addParameter(p, 'FramesPerHour', 12, @isnumeric)
+addParameter(p,'NFkBBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB baseline deduction
+addParameter(p, 'NFkBBackgroundAdjustment', 'on',@(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB fluorescence distribution adjustment
+addParameter(p,'NFkBBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of NFkB trajectories with correction factor for fluorescence drop derived from Mock experiments
+
 
 parse(p,id, varargin{:})
 
@@ -82,7 +86,8 @@ FramesPerHour = p.Results.FramesPerHour;
                             'ConvectionShift',ConvectionShift, 'OnThreshNFkB',OnThreshNFkB,...
                             'OnThreshKTR',OnThreshKTR,'MinSize', MinSize,'StartThreshNFkB',...
                             StartThreshNFkB,'StartThreshKTR', StartThreshKTR, 'Verbose', p.Results.Verbose,...
-                            'GraphLimitsNFkB', p.Results.GraphLimitsNFkB, 'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'StimulationTimePoint', p.Results.StimulationTimePoint);
+                            'GraphLimitsNFkB', p.Results.GraphLimitsNFkB, 'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'StimulationTimePoint', p.Results.StimulationTimePoint,...
+                            'FramesPerHour', p.Results.FramesPerHour, 'NFkBBaselineDeduction', p.Results.NFkBBaselineDeduction, 'NFkBBackgroundAdjustment',p.Results.NFkBBackgroundAdjustment,'NFkBBaselineAdjustment', p.Results.NFkBBaselineAdjustment);
    
 graph.var_nfkb = graph.var_nfkb(:,1:min(p.Results.TrimFrame, size(graph.var_nfkb,2))); %why is TrimFrame applied here and below?
 graph.var_nfkb_no_base_ded = graph.var_nfkb_no_base_ded(:,1:min(p.Results.TrimFrame, size(graph.var_nfkb_no_base_ded,2)));

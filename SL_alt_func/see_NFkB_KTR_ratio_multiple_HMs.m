@@ -11,7 +11,7 @@ valid_id = @(x) assert((isnumeric(x)&&length(x)==1)||exist(x,'file'),...
 addRequired(p,'IDs');%vector containing IDs to be plotted
 
 expectedFlags = {'on','off'};
-addParameter(p,'Verbose','on', @(x) any(validatestring(x,expectedFlags)));%checks whether optional name-value argument matches on or off %checks if x matches expectedFlags
+addParameter(p,'Verbose','off', @(x) any(validatestring(x,expectedFlags)));%checks whether optional name-value argument matches on or off %checks if x matches expectedFlags
 valid_conv = @(x) assert(isnumeric(x)&&(x>=0)&&(length(x)==1),...
     'Parameter must be single integer >= 0'); %checks whether parameters below are single integers
 addParameter(p,'ConvectionShift',1, valid_conv); %allows adjustment of convection shift (?)
@@ -28,6 +28,11 @@ addParameter(p, 'SortMetric', 'peakfreq_nfkb');
 expectedOrder = {'ascend', 'descend'};
 addParameter(p, 'SortOrder', 'descend', @(x)any(validatestring(x, expectedOrder))); 
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
+addParameter(p, 'FramesPerHour', 12, @isnumeric)
+addParameter(p,'NFkBBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB baseline deduction
+addParameter(p, 'NFkBBackgroundAdjustment', 'on',@(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB fluorescence distribution adjustment
+addParameter(p,'NFkBBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of NFkB trajectories with correction factor for fluorescence drop derived from Mock experiments
+addParameter(p, 'SortIndex', 1) %to allow sorting by multi-column metrics
 
 expectedFilters = {'none','nfkb', 'ktr', 'both'};
 addParameter(p, 'FilterResponders','none', @(x) any(validatestring(x,expectedFilters)));%filter out non-responders or not
@@ -45,7 +50,9 @@ for i= 1:n
 [ID(i).metrics,ID(i).aux, ID(i).graph, ID(i).info, ID(i).measure] = nfkb_ktr_ratio_metrics(IDs(i), 'MinLifetime',p.Results.MinLifetime,...
                             'ConvectionShift',p.Results.ConvectionShift, 'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
                             'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
-                            p.Results.Verbose, 'GraphLimitsNFkB', p.Results.GraphLimitsNFkB,'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'TrimFrame', p.Results.TrimFrame, 'StimulationTimePoint', p.Results.StimulationTimePoint);
+                            p.Results.Verbose, 'GraphLimitsNFkB', p.Results.GraphLimitsNFkB,'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'TrimFrame', p.Results.TrimFrame, 'StimulationTimePoint', p.Results.StimulationTimePoint, ...
+                            'FramesPerHour', p.Results.FramesPerHour, 'NFkBBaselineDeduction', p.Results.NFkBBaselineDeduction, 'NFkBBackgroundAdjustment',p.Results.NFkBBackgroundAdjustment,...
+                            'NFkBBaselineAdjustment', p.Results.NFkBBaselineAdjustment);
 end
 
 SortMetric = p.Results.SortMetric;
@@ -82,7 +89,7 @@ end
 
 %% Sort cells by sort metric
 for i= 1:n
-    [~,ID(i).graph.order] = sort(ID(i).graph.sort_metric, p.Results.SortOrder);
+    [~,ID(i).graph.order] = sort(ID(i).graph.sort_metric(1:end, p.Results.SortIndex), p.Results.SortOrder, 'MissingPlacement', 'last');
 end
 
 %% Plot NFkB and KTR heatmaps below each other
@@ -93,12 +100,12 @@ tiledlayout(2,n)
 
 for i= 1:n
     axes.ax(i) = nexttile;
-    colormapStack_for_tiled(ID(i).graph.var_nfkb(ID(i).graph.order,:),ID(i).graph.celldata(ID(i).graph.order,:), ID(i).graph.opt_nfkb, fig_handle, axes.ax(i)); %calls subfunction that makes figure    
+    colormapStack_for_tiled(ID(i).graph.var_nfkb(ID(i).graph.order,:),ID(i).graph.celldata(ID(i).graph.order,:), ID(i).graph.opt_nfkb, fig_handle, axes.ax(i),SortMetric); %calls subfunction that makes figure    
 end
 
 for i= 1:n
     axes.ax(i+n) = nexttile;
-    colormapStack_for_tiled(ID(i).graph.var_ktr(ID(i).graph.order,:),ID(i).graph.celldata(ID(i).graph.order,:), ID(i).graph.opt_ktr, fig_handle,axes.ax(i+n)); %calls subfunction that makes figure    
+    colormapStack_for_tiled(ID(i).graph.var_ktr(ID(i).graph.order,:),ID(i).graph.celldata(ID(i).graph.order,:), ID(i).graph.opt_ktr, fig_handle,axes.ax(i+n), SortMetric); %calls subfunction that makes figure    
 end
 
 

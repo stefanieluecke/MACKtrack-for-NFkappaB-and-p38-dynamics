@@ -1,4 +1,4 @@
-function h = colormapStack_for_tiled(measure1, CellData, options, fig_handle, axis_handle)
+function h = colormapStack_for_tiled(measure1, CellData, options, fig_handle, axis_handle, sort_metric)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 % Make stacked-colormap plot of cells
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -35,7 +35,7 @@ hold off
 colormap(mod_colormap)
 c = colorbar('YTick',options.MeasurementTicks,'YTickLabel',options.MeasurementTickLabels);
 set(c,'TickLength',0.003*ones(size(get(c,'TickLength'))))
-ylabel(c,[options.Name],'FontSize',12);
+ylabel(c,{options.Name; sort_metric},'FontSize',12, 'Interpreter', 'none');
 xlabel(handles.axes1,'Time (h)','FontSize',12);
 
 set(handles.h3,'Parent',handles.axes1);

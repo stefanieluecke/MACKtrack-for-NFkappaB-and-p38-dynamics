@@ -60,6 +60,7 @@ addParameter(p, 'StimulationTimePoint', 13, @isnumeric); % number of unstimulate
 addParameter(p,'NFkBBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB baseline deduction
 addParameter(p, 'NFkBBackgroundAdjustment', 'on',@(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB fluorescence distribution adjustment
 addParameter(p,'NFkBBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of NFkB trajectories with correction factor for fluorescence drop derived from Mock experiments
+addParameter(p, 'FramesPerHour', 12, @isnumeric)
 
 
 
@@ -88,6 +89,8 @@ info.GraphLimitsNFkB = p.Results.GraphLimitsNFkB; % Min/max used in graphing
 info.GraphLimitsKTR = p.Results.GraphLimitsKTR; % Min/max used in graphing
 info.OnThreshNFkB = p.Results.OnThreshNFkB;
 info.OnThreshKTR = p.Results.OnThreshKTR;
+%todo remove this temp fix, FramesPerHour should be included in AllMeasurements/MAKCtrack parameter!
+info.parameters.FramesPerHour = p.Results.FramesPerHour;
 %baseline_length_nfkb = size(measure.NFkBdim_Nuclear,2); % Endframe for baseline calculation (use entire vector), baseline length is the size of the rows, i.e. number of timepoints 
 %baseline_length_ktr = size(measure.KTR_ratio1,2); 
 
@@ -130,7 +133,7 @@ nfkb = nfkb - repmat(nfkb_baseline,1,size(nfkb,2)); %nfkb is re-defined as nfkb 
 if strcmpi(p.Results.NFkBBaselineDeduction,'on')
     nfkb_baseline = nanmean(nfkb(:,1:StimulationTimePoint),2); %baseline is determined from 1st to 13nth timepoint 
     nfkb_no_base_ded = nfkb;    
-    nfkb =  nfkb - nfkb_baseline; % ktr activity is defined as baseline - fluorescence measurement
+    nfkb =  nfkb - nfkb_baseline; % nfkb activity is defined as baseline - fluorescence measurement
 end 
 
 %NFkB Baseline shift adjustment based on general mock values

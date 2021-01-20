@@ -1,4 +1,4 @@
-function h = colormapStack_for_responder(measure1, CellData, options, fig_handle, axis_handle)
+function h = colormapStack_for_responder(measure1, CellData, options, fig_handle, axis_handle, sort_metric)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 % Make stacked-colormap plot of cells
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -39,7 +39,7 @@ colormap(responder_colormap)
 c = colorbar('YTick',options.MeasurementTicks,'YTickLabel',options.MeasurementTickLabels);
 set(c,'TickLength',0.003*ones(size(get(c,'TickLength'))))
 %ylabel(c,[options.Name]);
-ylabel(c,[options.Name],'FontSize',12);
+ylabel(c,{options.Name;sort_metric},'FontSize',12, 'Interpreter', 'none');
 %ytickangle(c,90);
 %xlabel(handles.axes1,'Time (h)');
 xlabel(handles.axes1,'Time (h)','FontSize',12);

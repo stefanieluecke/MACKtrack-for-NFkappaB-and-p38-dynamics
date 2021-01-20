@@ -78,6 +78,8 @@ data.time_ranges = table_data(2:end,strcmpi(table_data(1,:),'t'));
 data.parameter_files = table_data(2:end,strcmpi(table_data(1,:),'params file'));
 data.save_dir = table_data(2:end,strcmpi(table_data(1,:),'save path'));
 data.modify = table_data(2:end,strcmpi(table_data(1,:),'other params'));
+%20201208 addiiton SL dose info from table
+data.dose = table_data(2:end,strcmpi(table_data(1,:),'dose'));
 % For parameter modifier column: sub in single quotes that are misformatted after google sheet read
 for idx = 1:length(data.modify)
         tmp_str = data.modify{idx};

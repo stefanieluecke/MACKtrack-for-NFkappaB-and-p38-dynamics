@@ -20,9 +20,13 @@ addParameter(p,'StartThreshKTR',0.9, valid_conv); %max allowable starting thresh
 addParameter (p, 'OnThreshKTR', 3, @isnumeric); %sigma threshold for determining responders
 addParameter (p, 'GraphLimitsKTR',[-0.02,0.35],@isnumeric);
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
+addParameter(p, 'FramesPerHour', 12, @isnumeric)
+addParameter(p,'NFkBBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB baseline deduction
+addParameter(p, 'NFkBBackgroundAdjustment', 'on',@(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB fluorescence distribution adjustment
+addParameter(p,'NFkBBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of NFkB trajectories with correction factor for fluorescence drop derived from Mock experiments
 
 %parameter to access metrics to be graphed in violin plots
-addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
+addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList2.xlsx') %provide file path for Excel table with list of feature to be computed
 
 expectedFilters = {'none','nfkb', 'ktr', 'both', 'respective'};
 addParameter(p, 'FilterResponders','none', @(x) any(validatestring(x,expectedFilters)));%filter out non-responders or not
@@ -53,10 +57,12 @@ for i= 1:n
     [ID(i).metrics,~,ID(i).graph,ID(i).info,~] = nfkb_ktr_ratio_metrics(IDs(i), 'MinLifetime',p.Results.MinLifetime,...
                             'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
                             'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
-                            p.Results.Verbose, 'TrimFrame', p.Results.TrimFrame, 'StimulationTimePoint', p.Results.StimulationTimePoint);
+                            p.Results.Verbose, 'TrimFrame', p.Results.TrimFrame, 'StimulationTimePoint', p.Results.StimulationTimePoint,'FramesPerHour',...
+                            p.Results.FramesPerHour, 'NFkBBaselineDeduction', p.Results.NFkBBaselineDeduction, 'NFkBBackgroundAdjustment',p.Results.NFkBBackgroundAdjustment,...
+                            'NFkBBaselineAdjustment', p.Results.NFkBBaselineAdjustment);
 end
 %% NFKB Metrics
-%{
+%
 
 figure
 tiledlayout(4,round(numel(viol_met_nfkb)/2)) %looks best when using even number of metrics/features
@@ -118,7 +124,7 @@ end
 %}
 
 %% KTR metrics
-%{
+%
 %figure
 %tiledlayout(2,round(numel(viol_met)/2))
 
@@ -292,7 +298,7 @@ ylabel('Oscillating cells [%]')
 xlabel('Experiment ID')
 %}
 %% Percent responder plot
-
+%{
 data_for_resp_nfkb = nan(1,n);
 data_for_resp_ktr = nan(1,n);
 for i = 1:n
@@ -300,6 +306,8 @@ for i = 1:n
     data_for_resp_ktr(i) = ID(i).metrics.responders_fraction_ktr;
 end
 data_for_resp_bar = [data_for_resp_nfkb;data_for_resp_ktr];
+
+%bargraph
 figure
 b = bar(data_for_resp_bar', 'FaceColor', 'flat');
 colors = setcolors;
@@ -316,19 +324,26 @@ legend({'NFkB', 'KTR'}, 'Location', 'northwest')
 ylabel('Responder [% of total]')
 xlabel('Experiment ID')
 
+%}
+
+
 %% NFkB vs KTR responders plot
 %todo change percent responder plot above to use part of this
 responders(n).nfkb = [];
 responders(n).ktr = [];
 responders(n).dual = [];
 responders(n).non = [];
+doses(n).dose = [];
 for i = 1:n
     responders(i).nfkb  = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 0))/numel(ID(i).metrics.responder_index_nfkb);
     responders(i).ktr   = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 1 & ID(i).metrics.responder_index_nfkb == 0))/numel(ID(i).metrics.responder_index_nfkb);
     responders(i).dual  = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 1 & ID(i).metrics.responder_index_nfkb == 1))/numel(ID(i).metrics.responder_index_nfkb);
     responders(i).non   = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 0 & ID(i).metrics.responder_index_nfkb == 0))/numel(ID(i).metrics.responder_index_nfkb);
+    doses(i).dose = str2double(ID(i).info.dose{:});
+    %doses = [doses, str2num(ID(i).info.dose{:})];
 end
 
+%line plot for dual responders
 %{
 figure
 
@@ -360,6 +375,8 @@ xlabel('Experiment ID')
 hold off
 %}
 
+%{
+%stacked bar graph for dual responders
 figure
 data_for_resp_cat_bar=[responders(1:n).non;responders(1:n).dual; responders(1:n).nfkb; responders(1:n).ktr]; 
 bs = bar(data_for_resp_cat_bar', 'stacked', 'FaceColor', 'flat');
@@ -374,3 +391,49 @@ xlabel('Experiment ID')
 set(gca, 'XTick', 1:n,'XTickLabels', {IDs});
 
 %}
+
+
+
+%xy plot for dual responders with fitted curve (esp dose responses)
+%{
+figure
+
+p1 = scatter([doses.dose],[responders.nfkb], '>');
+%p1.Color = [0.9290 0.6940 0.1250];
+p1.MarkerEdgeColor = [0.9290 0.6940 0.1250];
+p1.MarkerFaceColor = [0.9290 0.6940 0.1250];
+hold on
+p2 = scatter([doses.dose],[responders.ktr],'*');
+%p2.Color = [0, 0.4470, 0.7410];
+p2.MarkerEdgeColor = [0, 0.4470, 0.7410];
+p2.MarkerFaceColor = [0, 0.4470, 0.7410];
+p3 = scatter([doses.dose],[responders.non],'d');
+%p3.Color = [113 115 118]/255;
+p3.MarkerEdgeColor = [113 115 118]/255;
+p3.MarkerFaceColor = [113 115 118]/255;
+p4 = scatter([doses.dose],[responders.dual],'o');
+%p4.Color = [0.4660 0.6740 0.1880];
+p4.MarkerEdgeColor = [0.4660 0.6740 0.1880];
+p4.MarkerFaceColor = [0.4660 0.6740 0.1880];
+
+%xlim([0.8 (n+0.2)]);
+ylim([0 1])
+xlim([doses(1).dose, doses(n).dose])
+set(gca, 'XTick', [doses.dose],'XTickLabels', [doses.dose]);
+set(gca, 'xscale', 'log')
+title('Responder Fractions [%]')
+legend({'NFkB only', 'KTR only', 'Non-Responders', 'Dual Responders'}, 'Location', 'northeastoutside')
+ylabel('Responder Fraction [%]')
+xlabel('Dose')
+hold off
+%}
+
+
+
+%colors = setcolors;
+%for i = 1:n
+%    s(1).CData(i,:) = colors.doses{i};
+%    s(2).CData(i,:) = colors.dosesDarker{i};
+%end
+%data_for_resp_nfkb;data_for_resp_ktr
+
