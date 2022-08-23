@@ -35,6 +35,7 @@ valid_id = @(x) assert((isnumeric(x)&&length(x)==1)||exist(x,'file'),...
 addRequired(p,'id',valid_id);
 % Optional parameters
 addParameter (p, 'OnThreshNFkB', 3, @isnumeric); %sigma threshold for determining responders
+%addParameter (p, 'OnThreshNFkB', 500, @isnumeric); %sigma threshold for determining responders
 addParameter (p, 'OnThreshKTR', 3, @isnumeric); %sigma threshold for determining responders
 addParameter(p, 'StartThreshNFkB', 14, @isnumeric); %max allowable starting threshhold (before baseline deduction)to filter out cells with pre-activated NFkB
 addParameter(p,'StartThreshKTR',0.9, @isnumeric);
@@ -50,9 +51,14 @@ valid_conv = @(x) assert(isnumeric(x)&&(x>=0)&&(length(x)==1),...
 addParameter(p,'ConvectionShift',1, valid_conv);
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
 addParameter(p, 'FramesPerHour', 12, @isnumeric)
-addParameter(p,'NFkBBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB baseline deduction
 addParameter(p, 'NFkBBackgroundAdjustment', 'on',@(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB fluorescence distribution adjustment
+addParameter(p,'NFkBBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB baseline deduction
 addParameter(p,'NFkBBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of NFkB trajectories with correction factor for fluorescence drop derived from Mock experiments
+addParameter(p,'KTRBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB baseline deduction
+addParameter(p, 'KTRBackgroundAdjustment', 'on',@(x) any(validatestring(x,expectedFlags))) %option to turn off KTR fluorescence distribution adjustment
+
+
+addParameter(p, 'IncludeKTR', 'on',@(x)any(validatestring(x, expectedFlags)));
 
 
 parse(p,id, varargin{:})
@@ -87,27 +93,35 @@ FramesPerHour = p.Results.FramesPerHour;
                             'OnThreshKTR',OnThreshKTR,'MinSize', MinSize,'StartThreshNFkB',...
                             StartThreshNFkB,'StartThreshKTR', StartThreshKTR, 'Verbose', p.Results.Verbose,...
                             'GraphLimitsNFkB', p.Results.GraphLimitsNFkB, 'GraphLimitsKTR', p.Results.GraphLimitsKTR, 'StimulationTimePoint', p.Results.StimulationTimePoint,...
-                            'FramesPerHour', p.Results.FramesPerHour, 'NFkBBaselineDeduction', p.Results.NFkBBaselineDeduction, 'NFkBBackgroundAdjustment',p.Results.NFkBBackgroundAdjustment,'NFkBBaselineAdjustment', p.Results.NFkBBaselineAdjustment);
+                            'FramesPerHour', p.Results.FramesPerHour, 'NFkBBaselineDeduction', p.Results.NFkBBaselineDeduction, 'NFkBBackgroundAdjustment',p.Results.NFkBBackgroundAdjustment,'NFkBBaselineAdjustment', p.Results.NFkBBaselineAdjustment,... 
+                            'KTRBaselineDeduction', p.Results.KTRBaselineDeduction,'KTRBackgroundAdjustment', p.Results.KTRBackgroundAdjustment, 'IncludeKTR', p.Results.IncludeKTR);
    
 graph.var_nfkb = graph.var_nfkb(:,1:min(p.Results.TrimFrame, size(graph.var_nfkb,2))); %why is TrimFrame applied here and below?
 graph.var_nfkb_no_base_ded = graph.var_nfkb_no_base_ded(:,1:min(p.Results.TrimFrame, size(graph.var_nfkb_no_base_ded,2)));
-graph.var_ktr = graph.var_ktr(:,1:min(p.Results.TrimFrame, size(graph.var_ktr,2)));
-graph.var_ktr_no_base_ded = graph.var_ktr_no_base_ded(:,1:min(p.Results.TrimFrame, size(graph.var_ktr_no_base_ded,2)));
+
+if strcmpi(p.Results.IncludeKTR,'on')
+    graph.var_ktr = graph.var_ktr(:,1:min(p.Results.TrimFrame, size(graph.var_ktr,2)));
+    graph.var_ktr_no_base_ded = graph.var_ktr_no_base_ded(:,1:min(p.Results.TrimFrame, size(graph.var_ktr_no_base_ded,2)));
+end
 graph.t = graph.t(1:size(graph.var_nfkb,2));
 
 graph.opt_nfkb = maketicks(graph.t,info.GraphLimitsNFkB,0); %calls function to add tick labels to time frame (?only partially understand what that does)
-graph.opt_ktr = maketicks(graph.t,info.GraphLimitsKTR,0); %calls function to add tick labels to time frame (?only partially understand what that does)
 graph.opt_nfkb.Name = 'NF\kappaB activation'; 
-graph.opt_ktr.Name = 'Kinase activation'; 
+
+if strcmpi(p.Results.IncludeKTR,'on')
+    graph.opt_ktr = maketicks(graph.t,info.GraphLimitsKTR,0); %calls function to add tick labels to time frame (?only partially understand what that does)
+    graph.opt_ktr.Name = 'Kinase activation'; 
+end
 
 %do I need this?
 if ~ismember ('OnThreshNFkB',p.UsingDefaults)
     OnThreshNFkB = info.OnThreshNFkB;
 end
-if ~ismember ('OnThreshKTR',p.UsingDefaults)
-    OnThreshKTR = info.OnThreshKTR;
+if strcmpi(p.Results.IncludeKTR,'on')
+    if ~ismember ('OnThreshKTR',p.UsingDefaults)
+        OnThreshKTR = info.OnThreshKTR;
+    end
 end
-
 %% NFkB METRICS
 %% BASIC NFkB METRICS: TIME SERIES, DERIVATIVE, INTEGRAL
 % 1) basic time series. Interpolate over "normal" interval (12 frames per hr) if required
@@ -178,7 +192,9 @@ metrics.max_amplitude_nfkb = nanmax(metrics.time_series_nfkb(:,StimulationTimePo
 
 %20200831 Testing shorter timeframe for max amplitude
 %todo decide on timeframe
-metrics.max_amplitude_4h_nfkb = nanmax(metrics.time_series_nfkb(:,StimulationTimePoint:48+StimulationTimePoint),[],2);
+if size(metrics.time_series_nfkb,2)>=48+StimulationTimePoint
+    metrics.max_amplitude_4h_nfkb = nanmax(metrics.time_series_nfkb(:,StimulationTimePoint:48+StimulationTimePoint),[],2);
+end
 
 metrics.max_integral_nfkb = nanmax(metrics.integrals_nfkb,[],2);
 metrics.max_derivative_nfkb = nanmax(metrics.derivatives_nfkb(:,StimulationTimePoint:end),[],2);
@@ -187,8 +203,15 @@ metrics.min_derivative_nfkb = nanmin(metrics.derivatives_nfkb(:,StimulationTimeP
 %% ACTIVITY metrics:
 %compute responder index using sigma threshold and off times
 Wliml = StimulationTimePoint+1; %first/lower time point of window to check for activity
-Wlimu = StimulationTimePoint + 48; %last/upper time point of window to check for activity, ie check in the first 4 hours after stimulation
-blockLengthThresh = 5; %number of consecutive frames cell needs to pass activity threshold to be considered a responder
+if size(metrics.time_series_nfkb,2)>48+StimulationTimePoint
+
+    Wlimu = StimulationTimePoint + 48; %last/upper time point of window to check for activity, ie check in the first 4 hours after stimulation
+else
+    Wlimu = size(metrics.time_series_nfkb,2);
+end
+blockLengthThresh = 3;
+%todo change this back to proper, temp change 20210707
+%blockLengthThresh = 5; %number of consecutive frames cell needs to pass activity threshold to be considered a responder
 baseline_stdv_nfkb = nanstd(metrics.time_series_nfkb(:,1:StimulationTimePoint),0,2);
 
 metrics.baseline_stdv_nfkb =baseline_stdv_nfkb;
@@ -280,8 +303,9 @@ for i = 1:size(metrics.time_series_nfkb,1)
         y = y-nanmean(y);
         if ~isempty(y)
             %SL 20200824: remove division by length(y), to be able to use Plancherel's theorem correctly below
-           Y = fft(y,NFFT);
-%            Y = fft(y,NFFT)/length(y); %20200902 SL What was the division by y needed/used for?
+            % SL temp 20211208 add division by length(y) back in to be more comparable to Ade's metrics
+ %          Y = fft(y,NFFT);
+            Y = fft(y,NFFT)/length(y); %20200902 SL What was the division by y needed/used for?
             aux.nfkb.fft(i,:) = abs(Y(1:NFFT/2+1));
             aux.nfkb.power(i,:) = abs(Y(1:NFFT/2+1).^2);
              %SL20200820 Normalization (Plancherel's theorem) to make power peaks comaparable
@@ -401,14 +425,14 @@ for i = 1:size(metrics.pk1_time_nfkb,1)
     
     %todo testing if smoothing is helpful
     %smoothing of trajectories
- %   metrics.time_series_smoothed_nfkb = smoothrows(metrics.time_series_nfkb,3);
+    metrics.time_series_smoothed_nfkb = smoothrows(metrics.time_series_nfkb,3);
     
   %  [pks, locs] =  globalpeaks(metrics.time_series_nfkb(i,1:min([90,p.Results.MinLifetime])),5);
     %todo check if I want to stick with 90 TPs (7.5 h, ie 6.5 h + before
     %stimulation), test shorter times
   %  %20200617 test to include more peaks because of more filtering
-%    [pks_nfkb, locs_nfkb, width_nfkb, prom_nfkb, heights_nfkb] = globalpeaks(metrics.time_series_smoothed_nfkb(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),5);
-     [pks_nfkb, locs_nfkb, width_nfkb, prom_nfkb, heights_nfkb] = globalpeaks(metrics.time_series_nfkb(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),10);
+   [pks_nfkb, locs_nfkb, width_nfkb, prom_nfkb, heights_nfkb] = globalpeaks(metrics.time_series_smoothed_nfkb(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),10);
+ %    [pks_nfkb, locs_nfkb, width_nfkb, prom_nfkb, heights_nfkb] = globalpeaks(metrics.time_series_nfkb(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),10);
 %    [pks_nfkb, locs_nfkb, width_nfkb, prom_nfkb, heights_nfkb] = globalpeaks(metrics.time_series_nfkb(i,1:min([96+StimulationTimePoint,p.Results.MinLifetime])),5);
 %    [pks_nfkb, locs_nfkb, width_nfkb, prom_nfkb, heights_nfkb] = globalpeaks(metrics.time_series_nfkb(i,1:min([90,p.Results.MinLifetime])),5);
     % Supress any peaks that are within 6 frames of each other.
@@ -421,11 +445,11 @@ for i = 1:size(metrics.pk1_time_nfkb,1)
         pks_nfkb(tmp) = []; locs_nfkb(tmp) = []; width_nfkb(tmp) = []; prom_nfkb(tmp) = []; heights_nfkb(tmp) = [];
     end
     
-    pks_nfkb(locs_nfkb<(StimulationTimePoint + 1)) = [];
-    width_nfkb(locs_nfkb<(StimulationTimePoint + 1)) = [];
-    prom_nfkb(locs_nfkb<(StimulationTimePoint + 1)) = [];
-    heights_nfkb(locs_nfkb<(StimulationTimePoint + 1)) = [];
-    locs_nfkb(locs_nfkb<(StimulationTimePoint + 1)) = [];
+    pks_nfkb(locs_nfkb<(StimulationTimePoint + 2)) = [];
+    width_nfkb(locs_nfkb<(StimulationTimePoint + 2)) = [];
+    prom_nfkb(locs_nfkb<(StimulationTimePoint + 2)) = [];
+    heights_nfkb(locs_nfkb<(StimulationTimePoint + 2)) = [];
+    locs_nfkb(locs_nfkb<(StimulationTimePoint + 2)) = [];
 %    pks(locs<(StimulationTimePoint + 3)) = []; %this seems to make some early peaks not detected --> remove extra padding
 %    locs(locs<(StimulationTimePoint + 3)) = [];
 
@@ -436,13 +460,34 @@ for i = 1:size(metrics.pk1_time_nfkb,1)
     prom_nfkb(pks_nfkb<= 0) = [];
     heights_nfkb(pks_nfkb<= 0) = [];
     pks_nfkb(pks_nfkb<= 0) = []; %pks needs to be filtered after others
+ 
+    %{
 %20200826 SL Testing: Filter to remove peaks with short peak prominence based on Stdv of baseline
- %   locs_nfkb(prom_nfkb< 2*baseline_stdv_nfkb(i)) = [];
- %   width_nfkb(prom_nfkb< 2*baseline_stdv_nfkb(i)) = [];
-  %  pks_nfkb(prom_nfkb< 2*baseline_stdv_nfkb(i)) = []; 
-   % heights_nfkb(prom_nfkb< 2*baseline_stdv_nfkb(i)) = [];
-    %prom_nfkb(prom_nfkb< 2*baseline_stdv_nfkb(i)) = [];%prom pks needs to be filtered after others
-
+    locs_nfkb(prom_nfkb< 2*baseline_stdv_nfkb(i)) = [];
+   width_nfkb(prom_nfkb< 2*baseline_stdv_nfkb(i)) = [];
+   pks_nfkb(prom_nfkb< 2*baseline_stdv_nfkb(i)) = []; 
+   heights_nfkb(prom_nfkb< 2*baseline_stdv_nfkb(i)) = [];
+    prom_nfkb(prom_nfkb< 2*baseline_stdv_nfkb(i)) = [];%prom pks needs to be filtered after others
+    %}
+    %{
+%20211208 SL Testing: Filter to remove peaks with short peak prominenc based on abs value
+   locs_nfkb(prom_nfkb< 0.1) = [];
+   width_nfkb(prom_nfkb< 0.1) = []; 
+   pks_nfkb(prom_nfkb< 0.1) = [];
+   heights_nfkb(prom_nfkb< 0.1) = [];
+   prom_nfkb(prom_nfkb< 0.1) = [];%prom pks needs to be filtered after others
+%}
+ 
+%{    
+% Filter based on a minimum peak height of 0.75    
+    locs_nfkb(heights_nfkb< 0.75) = [];
+    width_nfkb(heights_nfkb< 0.75) = [];
+    pks_nfkb(heights_nfkb< 0.75) = []; 
+    prom_nfkb(heights_nfkb< 0.75) = [];
+    heights_nfkb(heights_nfkb< 0.75) = [];%heights pks needs to be filtered after others
+%}
+    
+% Filter based on a minimum peak height of 2x STDV of baseline 
     locs_nfkb(heights_nfkb< 2*baseline_stdv_nfkb(i)) = [];
     width_nfkb(heights_nfkb< 2*baseline_stdv_nfkb(i)) = [];
     pks_nfkb(heights_nfkb< 2*baseline_stdv_nfkb(i)) = []; 
@@ -520,6 +565,8 @@ for i = 1:length(aux.nfkb.thresholds)
 end
 
 %% KTR METRICS
+
+if strcmpi(p.Results.IncludeKTR,'on')
 %% BASIC KTR METRICS: TIME SERIES, Baseline DERIVATIVE, INTEGRAL
 %
 % 1.1) basic time series. Interpolate over "normal" interval (12 frames per hr) if required
@@ -587,7 +634,9 @@ metrics.max_amplitude_ktr = nanmax(metrics.time_series_ktr(:,StimulationTimePoin
 
 %20200831 Testing shorter timeframe for max amplitude
 %todo decide on timeframe
-metrics.max_amplitude_4h_ktr = nanmax(metrics.time_series_ktr(:,StimulationTimePoint:48+StimulationTimePoint),[],2);
+if size(metrics.time_series_ktr,2)>48+StimulationTimePoint
+    metrics.max_amplitude_4h_ktr = nanmax(metrics.time_series_ktr(:,StimulationTimePoint:48+StimulationTimePoint),[],2);
+end
 
 metrics.max_integral_ktr = nanmax(metrics.integrals_ktr,[],2);
 metrics.max_derivative_ktr = nanmax(metrics.derivatives_ktr(:,StimulationTimePoint:end),[],2);
@@ -597,7 +646,12 @@ metrics.min_derivative_ktr = nanmin(metrics.derivatives_ktr(:,StimulationTimePoi
 
 %compute responder index using sigma threshold and off times
 Wliml = StimulationTimePoint+1; %first/lower time point of window to check for activity
-Wlimu = StimulationTimePoint + 36; %last/upper time point of window to check for activity, ie check in the first 3 hours after stimulation
+if size(metrics.time_series_ktr,2)>36+StimulationTimePoint
+    Wlimu = StimulationTimePoint + 36; %last/upper time point of window to check for activity, ie check in the first 3 hours after stimulation
+else
+    Wlimu = size(metrics.time_series_ktr,2);
+end
+
 blockLengthThresh = 3; %number of consecutive frames cell needs to pass activity threshold to be considered a responder
 baseline_stdv_ktr = nanstd(metrics.time_series_ktr(:,1:StimulationTimePoint),0,2);
 
@@ -842,14 +896,14 @@ for i = 1:size(metrics.pk1_time_ktr,1)
 
     %todo testing if smoothing is helpful
     %smoothing of trajectories
- %   metrics.time_series_smoothed_ktr = smoothrows(metrics.time_series_ktr,3);
+    metrics.time_series_smoothed_ktr = smoothrows(metrics.time_series_ktr,3);
 
     
     %  globalpeaks(metrics.time_series_ktr(i,1:min([90,p.Results.MinLifetime])),5);
     %todo check if I want to stick with 90 TPs (7.5 h, ie 6.5 h + before stimulation), test shorter time frames
   %  %20200617 test to include more peaks because of more filtering
-%    [pks_ktr, locs_ktr, width_ktr, prom_ktr, heights_ktr] = globalpeaks(metrics.time_series_smoothed_ktr(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),5);
-    [pks_ktr, locs_ktr, width_ktr, prom_ktr, heights_ktr] = globalpeaks(metrics.time_series_ktr(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),10);
+    [pks_ktr, locs_ktr, width_ktr, prom_ktr, heights_ktr] = globalpeaks(metrics.time_series_smoothed_ktr(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),10);
+%    [pks_ktr, locs_ktr, width_ktr, prom_ktr, heights_ktr] = globalpeaks(metrics.time_series_ktr(i,1:min([48+StimulationTimePoint,p.Results.MinLifetime])),10);
     %    [pks_ktr, locs_ktr, width_ktr, prom_ktr, heights_ktr] = globalpeaks(metrics.time_series_ktr(i,1:min([96+StimulationTimePoint,p.Results.MinLifetime])),5);
 %    [pks_ktr, locs_ktr, width_ktr, prom_ktr, heights_ktr] = globalpeaks(metrics.time_series_ktr(i,1:min([90,p.Results.MinLifetime])),5);
     % Supress any peaks that are within 4 frames of each other. %Use min difference of 4 for KTR, 6 for NFkB  
@@ -958,4 +1012,6 @@ metrics.duration_ktr = zeros(size(metrics.time_series_ktr,1),length(aux.ktr.thre
 %only include TP from stimualtions onwards
 for i = 1:length(aux.ktr.thresholds)
     metrics.duration_ktr(:,i) = nansum(smoothed(:,StimulationTimePoint:end)>aux.ktr.thresholds(i),2)/FramesPerHour;
+end
+
 end

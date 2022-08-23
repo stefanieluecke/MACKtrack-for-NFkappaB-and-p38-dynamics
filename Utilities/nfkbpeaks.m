@@ -44,7 +44,7 @@ addParameter(p,'NumPeaks',16,valid_val);
 addParameter(p,'BeginFrame',3,valid_val);
 addParameter(p,'EndFrame',size(trajectories,2)-2,valid_val);
 addParameter(p,'MinHeight',0.75,valid_val);
-addParameter(p,'MinDist',6,valid_val);
+addParameter(p,'MinDist',9,valid_val);
 addParameter(p,'SmoothSize',3,valid_val);
 addParameter(p,'YLim',[0.25 9] ,valid_lim);
 
@@ -105,7 +105,7 @@ for i = 1:size(peak_times,1)
         heights(tmp) = [];
     end
     
-%{    
+%{  
     % Supress early and low-quality peaks
     drops = (locs<begin_frame) | (heights<min_height);
     pks(drops) = [];
@@ -114,12 +114,21 @@ for i = 1:size(peak_times,1)
     %Filtering of peaks
     
     %Filtering for distance from StimulationTimePoint
-    pks(locs<(1)) = [];
-    width(locs<(1)) = [];
-    prom(locs<(1)) = [];
-    heights(locs<(1)) = [];
-    locs(locs<(1)) = [];
+    pks(locs<(begin_frame)) = [];
+    width(locs<(begin_frame)) = [];
+    prom(locs<(begin_frame)) = [];
+    heights(locs<(begin_frame)) = [];
+    locs(locs<(begin_frame)) = [];
 
+    %{
+    %20211208 SL Testing: Filter to remove peaks with short peak prominenc based on abs value
+   locs(prom< 0.1) = [];
+   width(prom< 0.1) = []; 
+   pks(prom< 0.1) = [];
+   heights(prom< 0.1) = [];
+   prom(prom< 0.1) = [];%prom pks needs to be filtered after others
+%}
+    
 %    Filter to remove peaks with amplitudes below 0
     locs(pks<= 0) = [];
     width(pks<= 0) = [];
@@ -127,13 +136,21 @@ for i = 1:size(peak_times,1)
     heights(pks<= 0) = [];
     pks(pks<= 0) = []; %pks needs to be filtered after others
 
+    %{
+    %    Filter to remove peaks with heights lower than min_height
+    locs(heights< min_height) = [];
+    width(heights< min_height) = [];
+    pks(heights< min_height) = []; 
+    prom(heights< min_height) = [];
+    heights(heights< min_height) = [];%heights pks needs to be filtered after others
+ %}   
 %    Filter to remove peaks with heights lower than 2* stdv of baseline
     locs(heights< 2*baseline_stdv(i)) = [];
     width(heights< 2*baseline_stdv(i)) = [];
     pks(heights< 2*baseline_stdv(i)) = []; 
     prom(heights< 2*baseline_stdv(i)) = [];
     heights(heights< 2*baseline_stdv(i)) = [];%heights pks needs to be filtered after others
-    
+ %   
 %   Filter for peak width    
     locs(width< 2) = [];
     pks(width< 2) = []; 
@@ -156,7 +173,7 @@ for i = 1:size(peak_times,1)
     % Show small multiples with called peaks - some randomness is introduced so same cells aren't always shown.
     % (if graph isn't filling up, increase cutoff (0.2 seems to work ok for 300-500 cells)
     if p.Results.ShowGraph
-        if (plot_idx<=length(ha)) && (length(pks)>6) && (rand(1) < 0.2)
+        if (plot_idx<=length(ha)) && (length(pks)>6) && (rand(1) < 0.5)
             plot(ha(plot_idx),1:length(vect),vect)
             hold(ha(plot_idx),'on')
             plot(ha(plot_idx),locs,pks,'ok','MarkerSize',4)

@@ -1,4 +1,4 @@
-function h = colormapStack_for_tiled(measure1, CellData, options, fig_handle, axis_handle, sort_metric)
+function h = colormapStack_for_tiled(measure1, CellData, options, fig_handle, axis_handle, sort_metric_name)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 % Make stacked-colormap plot of cells
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -35,13 +35,14 @@ hold off
 colormap(mod_colormap)
 c = colorbar('YTick',options.MeasurementTicks,'YTickLabel',options.MeasurementTickLabels);
 set(c,'TickLength',0.003*ones(size(get(c,'TickLength'))))
-ylabel(c,{options.Name; sort_metric},'FontSize',12, 'Interpreter', 'none');
-xlabel(handles.axes1,'Time (h)','FontSize',12);
+ylabel(c,{options.Name; sort_metric_name},'FontSize',12, 'Interpreter', 'none');
+xlabel(handles.axes1,'Time [h]','FontSize',12);
 
 set(handles.h3,'Parent',handles.axes1);
 set(handles.axes1,'YTick',[],'XTick',options.TimeTicks,'TickLength',[0.005 0.005])
 
-title({options.title, ['Number of cells: ',num2str(size(measure1,1))]}, 'Interpreter', 'none')
+%title([num2str(size(measure1,1)),' cells'], 'Interpreter', 'none')
+title({options.title, [num2str(size(measure1,1)), ' cells']}, 'Interpreter', 'none')
 %title({options.title}, 'Interpreter', 'none')
 
 % - - - - - - - 4) Set fonts, labels, and data cursor callback - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

@@ -56,6 +56,7 @@ colors.irf = [48 145 50]/255;
 
 % NFkB stimulus specificity colors
 colors.tnf = [118 180 203]/255;
+colors.tnf_light = [173 214 228]/255;
 colors.lps = [223 79 66]/255;
 colors.cpg = [136 180 69]/255;
 colors.pam = [230 130 57]/255;
@@ -67,6 +68,20 @@ colors.bg_gray = [175 176 179
                   232 233 239
                   255 255 255]/255;
 
+%TNFKO project colors
+colors.WT = [93,147,191]/255;
+colors.WT_light = [159,191,217]/255;
+colors.TNFKO = [233,72,73]/255;
+colors.TNFKO_light = [241,135,135]/255;
+colors.TNFKOP100KO = [119 172 48]/255;
+colors.TNFKOP100KO_light = [161 211 95]/255;
+colors.CoCulture = [118,83,189]/255;
+colors.CoCulture_light = [177,156,217]/255;
+
+% p38 project colors
+colors.mVen = [0.9290, 0.6940, 0.1250];
+colors.mVenKTR = [119 172 48]/255;
+              
 % "4th of July" theme - 2 bright, 2 dark.
 colors.theme1{1} = colors.red;
 colors.theme1{2} = [52 152 219]/255;

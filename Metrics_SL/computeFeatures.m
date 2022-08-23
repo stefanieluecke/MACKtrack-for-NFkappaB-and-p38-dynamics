@@ -29,11 +29,15 @@ addParameter (p, 'OnThreshKTR', 3, @isnumeric); %sigma threshold for determining
 addParameter (p, 'GraphLimitsKTR',[-0.02,0.35],@isnumeric);
 addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
 addParameter(p, 'FramesPerHour', 12, @isnumeric)
+addParameter(p, 'IncludeKTR', 'on',@(x)any(validatestring(x, expectedFlags)));
+addParameter(p, 'NFkBBackgroundAdjustment', 'on',@(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB fluorescence distribution adjustment
+addParameter(p,'NFkBBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of NFkB trajectories with correction factor for fluorescence drop derived from Mock experiments
+addParameter(p,'KTRBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB baseline deduction
 
 
 % Optional parameters to be passed used in computeFeature function
-%addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
-addParameter(p, 'FeatureListFile', 'D:\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
+addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
+%addParameter(p, 'FeatureListFile', 'D:\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
 addParameter(p, 'FeatureListTable', []);
 addParameter(p, 'metrics', []);
 
@@ -66,23 +70,43 @@ if isempty(p.Results.metrics)
                                 'ConvectionShift',p.Results.ConvectionShift, 'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
                                 'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
                                 p.Results.Verbose, 'TrimFrame', p.Results.TrimFrame, ...
-                                'StimulationTimePoint', p.Results.StimulationTimePoint, 'FramesPerHour', p.Results.FramesPerHour);
-
+                                'StimulationTimePoint', p.Results.StimulationTimePoint, 'FramesPerHour', p.Results.FramesPerHour, 'NFkBBackgroundAdjustment',p.Results.NFkBBackgroundAdjustment,'NFkBBaselineAdjustment', p.Results.NFkBBaselineAdjustment,... 
+                               'IncludeKTR', p.Results.IncludeKTR);
+%temp 20210811
+%{
+                            
+if isempty(p.Results.metrics)
+    metrics = nfkb_ktr_ratio_metrics(id, 'MinLifetime',p.Results.MinLifetime,...
+                                'ConvectionShift',p.Results.ConvectionShift, 'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
+                                'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
+                                p.Results.Verbose, 'TrimFrame', p.Results.TrimFrame, ...
+                                'StimulationTimePoint', p.Results.StimulationTimePoint, 'FramesPerHour', p.Results.FramesPerHour, 'NFkBBaselineDeduction', p.Results.NFkBBaselineDeduction, 'NFkBBackgroundAdjustment',p.Results.NFkBBackgroundAdjustment,'NFkBBaselineAdjustment', p.Results.NFkBBaselineAdjustment,... 
+                            'KTRBaselineDeduction', p.Results.KTRBaselineDeduction,'IncludeKTR', p.Results.IncludeKTR);
+%}
 else
     metrics = p.Results.metrics;
 end
+
+
+%% Filtering 
+
+%% Get Peak and Signal Stats
 
 %todo adjust these inputs to my own fuctions
 %get_peak_stat_list
 if any(ismember(FeatureList, PeakStatsList))
     peak_stats_nfkb =get_peak_stats_nfkb(metrics.time_series_nfkb, metrics.baseline_stdv_nfkb, 'FramesPerHour', FramesPerHour, 'StimulationTimePoint', StimulationTimePoint);
+    if strcmpi(p.Results.IncludeKTR,'on')
     peak_stats_ktr =get_peak_stats_ktr(metrics.time_series_ktr, metrics.baseline_stdv_ktr, 'FramesPerHour',FramesPerHour, 'StimulationTimePoint', StimulationTimePoint);
+    end
 end
 
 %sig_stats
 if any(ismember(FeatureList, SignalStatsList))
     sig_stats_nfkb =get_sig_stats_nfkb(metrics.time_series_nfkb, StimulationTimePoint);
+    if strcmpi(p.Results.IncludeKTR,'on')
     sig_stats_ktr =get_sig_stats_ktr(metrics.time_series_ktr, StimulationTimePoint);
+    end
 end
 
 % positive integrals
@@ -91,8 +115,9 @@ if any(ismember(FeatureList, {'integrals_pos_nfkb','time2HalfMaxPosIntegral_nfkb
    % endFrame = min(96+StimulationTimePoint, size(metrics.integrals_nfkb-StimulationTimePoint,2));
    endFrame = min(96, size(metrics.integrals_nfkb,2));
     pos_integral_features_nfkb = get_pos_integrals_nfkb(metrics.integrals_nfkb, FramesPerHour, endFrame);
+    if strcmpi(p.Results.IncludeKTR,'on')
     pos_integral_features_ktr = get_pos_integrals_ktr(metrics.integrals_ktr, FramesPerHour, endFrame);
-
+    end
 end
 
 %%
@@ -169,16 +194,20 @@ for j = 1:length(FeatureList)
                 features.(featName)     = get_max_pk1_speed(metrics.pk1_time_nfkb, metrics.derivatives_nfkb, FramesPerHour, StimulationTimePoint);
             case{'max_pk1_speed_ktr'}
                 features.(featName)     = get_max_pk1_speed(metrics.pk1_time_ktr, metrics.derivatives_ktr, FramesPerHour, StimulationTimePoint);
-            case {'osc_cats_nfkb'}
-                 features.(featName)    =  get_osc_cats(metrics.peakfreq_nfkb,metrics.off_times_nfkb,'cutoff_fq', 0.42);
-            case {'osc_cats_norm_nfkb'}
-                 features.(featName)    =  get_osc_cats(metrics.peakfreq_norm_nfkb,metrics.off_times_nfkb,'cutoff_fq', 0.42);
-%todo find proper frequency threshold for KTR
-            case {'osc_cats_ktr'}
-                 features.(featName)    =  get_osc_cats(metrics.peakfreq_ktr,metrics.off_times_ktr,'cutoff_fq', 0.35);
-            case {'osc_cats_norm_ktr'}
-                 features.(featName)    =  get_osc_cats(metrics.peakfreq_norm_ktr,metrics.off_times_ktr,'cutoff_fq', 0.35);
-           
+            case {'osc_cats_freq_nfkb'}
+                 features.(featName)    =  get_osc_cats_freq(metrics.peakfreq_nfkb,metrics.off_times_nfkb,'cutoff_fq', 0.42);
+            case {'osc_cats_freq_norm_nfkb'}
+                 features.(featName)    =  get_osc_cats_freq(metrics.peakfreq_norm_nfkb,metrics.off_times_nfkb,'cutoff_fq', 0.42);
+            case {'osc_cats_peak_nfkb'}
+                 features.(featName)    =  get_osc_cats_peak( peak_stats_nfkb.num_peaks_nfkb,metrics.off_times_nfkb,'Threshold', 3);
+            %todo find proper frequency threshold for KTR
+            case {'osc_cats_freq_ktr'}
+                 features.(featName)    =  get_osc_cats_freq(metrics.peakfreq_ktr,metrics.off_times_ktr,'cutoff_fq', 0.35);
+            case {'osc_cats_freq_norm_ktr'}
+                 features.(featName)    =  get_osc_cats_freq(metrics.peakfreq_norm_ktr,metrics.off_times_ktr,'cutoff_fq', 0.35);
+           case {'osc_cats_peak_ktr'}
+                 features.(featName)    =  get_osc_cats_peak( peak_stats_ktr.num_peaks_ktr,metrics.off_times_ktr,'Threshold', 3);
+            
             case{'integrals_pos_nfkb','time2HalfMaxPosIntegral_nfkb','max_pos_integral_nfkb'}
                 features.(featName)     = pos_integral_features_nfkb.(featName);
                 

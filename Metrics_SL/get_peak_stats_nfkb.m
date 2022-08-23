@@ -33,7 +33,9 @@ StimulationTimePoint = p.Results.StimulationTimePoint;
 %todo adjust these for new starting timepoint
 %todo check for any differences between Ade's and Brooks' nfkbpeaks
 %todo check fi these parameters work for me
-[output.peak_times_nfkb,output.peak_amps_nfkb, output.valley_times_nfkb, output.valley_amps_nfkb]=nfkbpeaks(time_series(:, StimulationTimePoint:end), baseline_stdv,'BeginFrame',3,'MinHeight',0.75,'MinDist',4, 'SmoothSize',1);
+%[output.peak_times_nfkb,output.peak_amps_nfkb, output.valley_times_nfkb, output.valley_amps_nfkb]=nfkbpeaks(time_series(:, StimulationTimePoint:end), baseline_stdv,'BeginFrame',3,'MinHeight',0.75,'MinDist',4, 'SmoothSize',1);
+%[output.peak_times_nfkb,output.peak_amps_nfkb, output.valley_times_nfkb, output.valley_amps_nfkb]=nfkbpeaks(time_series(:, StimulationTimePoint:end), baseline_stdv,'BeginFrame',3,'MinHeight',0.75,'MinDist',6, 'SmoothSize',1);
+[output.peak_times_nfkb,output.peak_amps_nfkb, output.valley_times_nfkb, output.valley_amps_nfkb]=nfkbpeaks(time_series(:, StimulationTimePoint:end), baseline_stdv,'BeginFrame',3,'MinHeight',0.5,'MinDist',6, 'SmoothSize',3, 'ShowGraph', 0);
 ipt=diff(output.peak_times_nfkb,1,2);
 
 %%

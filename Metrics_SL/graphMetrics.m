@@ -24,9 +24,12 @@ addParameter(p, 'FramesPerHour', 12, @isnumeric)
 addParameter(p,'NFkBBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB baseline deduction
 addParameter(p, 'NFkBBackgroundAdjustment', 'on',@(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB fluorescence distribution adjustment
 addParameter(p,'NFkBBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of NFkB trajectories with correction factor for fluorescence drop derived from Mock experiments
+addParameter(p, 'IncludeKTR', 'on',@(x)any(validatestring(x, expectedFlags)));
+
 
 %parameter to access metrics to be graphed in violin plots
-addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList2.xlsx') %provide file path for Excel table with list of feature to be computed
+%addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList2.xlsx') %provide file path for Excel table with list of feature to be computed
+addParameter(p, 'FeatureListFile', 'D:\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
 
 expectedFilters = {'none','nfkb', 'ktr', 'both', 'respective'};
 addParameter(p, 'FilterResponders','none', @(x) any(validatestring(x,expectedFilters)));%filter out non-responders or not
@@ -59,14 +62,18 @@ for i= 1:n
                             'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
                             p.Results.Verbose, 'TrimFrame', p.Results.TrimFrame, 'StimulationTimePoint', p.Results.StimulationTimePoint,'FramesPerHour',...
                             p.Results.FramesPerHour, 'NFkBBaselineDeduction', p.Results.NFkBBaselineDeduction, 'NFkBBackgroundAdjustment',p.Results.NFkBBackgroundAdjustment,...
-                            'NFkBBaselineAdjustment', p.Results.NFkBBaselineAdjustment);
+                            'NFkBBaselineAdjustment', p.Results.NFkBBaselineAdjustment,'IncludeKTR',p.Results.IncludeKTR);
 end
 %% NFKB Metrics
 %
 
 figure
-tiledlayout(4,round(numel(viol_met_nfkb)/2)) %looks best when using even number of metrics/features
+if strcmpi(p.Results.IncludeKTR,'on')
 
+    tiledlayout(4,round(numel(viol_met_nfkb)/2)) %looks best when using even number of metrics/features
+else
+    tiledlayout(2,round(numel(viol_met_nfkb)/2)) %looks best when using even number of metrics/features
+end    
 
 switch p.Results.FilterResponders 
     case 'none'
@@ -127,60 +134,61 @@ end
 %
 %figure
 %tiledlayout(2,round(numel(viol_met)/2))
+if strcmpi(p.Results.IncludeKTR,'on')
 
-switch p.Results.FilterResponders 
-    case 'none'
-       for i = 1:n
-        for k = 1:numel(viol_met_ktr)
-            if i==1 
-            violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(:, viol_met_index_ktr{k})};
-            else
-            violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(:, viol_met_index_ktr{k})];
+    switch p.Results.FilterResponders 
+        case 'none'
+           for i = 1:n
+            for k = 1:numel(viol_met_ktr)
+                if i==1 
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(:, viol_met_index_ktr{k})};
+                else
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(:, viol_met_index_ktr{k})];
+                end
             end
-        end
-       end
-    case 'nfkb'
-       for i = 1:n
-        for k = 1:numel(viol_met_ktr)
-            if i==1 
-            violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1,viol_met_index_ktr{k})};
-            else
-            violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1,viol_met_index_ktr{k})];
+           end
+        case 'nfkb'
+           for i = 1:n
+            for k = 1:numel(viol_met_ktr)
+                if i==1 
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1,viol_met_index_ktr{k})};
+                else
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1,viol_met_index_ktr{k})];
+                end
             end
-        end
-       end
-    case {'ktr', 'respective'}
-       for i = 1:n
-        for k = 1:numel(viol_met_ktr)
-            if i==1 
-            violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_ktr == 1, viol_met_index_ktr{k})};
-            else
-            violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k})];
+           end
+        case {'ktr', 'respective'}
+           for i = 1:n
+            for k = 1:numel(viol_met_ktr)
+                if i==1 
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_ktr == 1, viol_met_index_ktr{k})};
+                else
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k})];
+                end
             end
-        end
-       end
-    case 'both'
-       for i = 1:n
-        for k = 1:numel(viol_met_ktr)
-            if i==1 
-            violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k} )};
-            else
-            violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k})];
+           end
+        case 'both'
+           for i = 1:n
+            for k = 1:numel(viol_met_ktr)
+                if i==1 
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k} )};
+                else
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k})];
+                end
             end
-        end
-       end    
-end    
+           end    
+    end    
 
-violin_spacing = 1:n;
-for k = 1:numel(viol_met_ktr)
- %   violin_mack(violin.(viol_met_ktr{k}), violin_spacing, 'Area', 0.05, 'YLim', [-5 15])
-    axes.ax(k) = nexttile;
-    violin_mack(violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
-%    violin_mack(violin.(viol_met_ktr{k}),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
-    title([viol_met_ktr{k},' ',num2str(viol_met_index_ktr{k})], 'Interpreter', 'none')
-    ylabel(viol_met_units_ktr{k})
+    violin_spacing = 1:n;
+    for k = 1:numel(viol_met_ktr)
+     %   violin_mack(violin.(viol_met_ktr{k}), violin_spacing, 'Area', 0.05, 'YLim', [-5 15])
+        axes.ax(k) = nexttile;
+        violin_mack(violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
+    %    violin_mack(violin.(viol_met_ktr{k}),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
+        title([viol_met_ktr{k},' ',num2str(viol_met_index_ktr{k})], 'Interpreter', 'none')
+        ylabel(viol_met_units_ktr{k})
+    end
 end
-
 %}
 
 %
@@ -242,29 +250,41 @@ xlabel('Experiment ID')
 
 %}
 %% Percent oscillators plot, using normalized Peakfreq
-%{
+%
+
+if strcmpi(p.Results.IncludeKTR,'on')
+    osc_cat_norm(n).ktr = [];
+end
 osc_cat_norm(n).nfkb = [];
-osc_cat_norm(n).ktr = [];
+
 for i = 1:n
 osc_cat_norm(i).nfkb    =  get_osc_cats(ID(i).metrics.peakfreq_norm_nfkb,ID(i).metrics.off_times_nfkb,'cutoff_fq', 0.42);
 %todo find proper frequency threshold for KTR
-osc_cat_norm(i).ktr    =  get_osc_cats(ID(i).metrics.peakfreq_norm_ktr,ID(i).metrics.off_times_ktr,'cutoff_fq', 0.42);            
+    if strcmpi(p.Results.IncludeKTR,'on')
+        osc_cat_norm(i).ktr    =  get_osc_cats(ID(i).metrics.peakfreq_norm_ktr,ID(i).metrics.off_times_ktr,'cutoff_fq', 0.42);            
+    end
 end
 
 osc_perc_nfkb = nan(1,n);
-osc_perc_ktr = nan(1,n);
+if strcmpi(p.Results.IncludeKTR,'on')
+    osc_perc_ktr = nan(1,n);
+end
 
 %calculate %oscillators of total 
 switch p.Results.FilterResponders 
     case 'none'
         for i = 1:n
         osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc'))/numel(osc_cat_norm(i).nfkb);
+        if strcmpi(p.Results.IncludeKTR,'on')
         osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc'))/numel(osc_cat_norm(i).ktr);
+        end 
         end
     case 'both' 
         for i = 1:n
         osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).nfkb((ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 )));
+        if strcmpi(p.Results.IncludeKTR,'on')
         osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).ktr((ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 )));
+        end
         end
     case 'ktr'
         for i = 1:n
@@ -274,22 +294,32 @@ switch p.Results.FilterResponders
     case 'nfkb'
         for i = 1:n
         osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 ))/numel(osc_cat_norm(i).nfkb( ID(i).metrics.responder_index_nfkb == 1 ));
+        if strcmpi(p.Results.IncludeKTR,'on')
         osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_index_nfkb == 1 ))/numel(osc_cat_norm(i).ktr(ID(i).metrics.responder_index_nfkb == 1 ));
+        end
         end
     case 'respective'
         for i = 1:n
         osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 ))/numel(osc_cat_norm(i).nfkb( ID(i).metrics.responder_index_nfkb == 1 ));
         osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).ktr(ID(i).metrics.responder_index_ktr == 1 ));
         end
-end       
-data_for_osc_bar = [osc_perc_nfkb;osc_perc_ktr];
+end      
+
+if strcmpi(p.Results.IncludeKTR,'on')
+
+    data_for_osc_bar = [osc_perc_nfkb;osc_perc_ktr];
+else
+    data_for_osc_bar = [osc_perc_nfkb];
+end
 
 figure
 b = bar(data_for_osc_bar', 'FaceColor', 'flat');
 colors = setcolors;
 for i = 1:n
     b(1).CData(i,:) = colors.doses{i};
+    if strcmpi(p.Results.IncludeKTR,'on')
     b(2).CData(i,:) = colors.dosesDarker{i};
+    end
 end
 set(gca, 'XTick', 1:n,'XTickLabels', {IDs});
 title('Oscillators using norm. peakfreq[%]')
@@ -298,22 +328,40 @@ ylabel('Oscillating cells [%]')
 xlabel('Experiment ID')
 %}
 %% Percent responder plot
-%{
-data_for_resp_nfkb = nan(1,n);
-data_for_resp_ktr = nan(1,n);
-for i = 1:n
-    data_for_resp_nfkb(i) = ID(i).metrics.responders_fraction_nfkb;
-    data_for_resp_ktr(i) = ID(i).metrics.responders_fraction_ktr;
-end
-data_for_resp_bar = [data_for_resp_nfkb;data_for_resp_ktr];
+%
 
-%bargraph
-figure
-b = bar(data_for_resp_bar', 'FaceColor', 'flat');
-colors = setcolors;
-for i = 1:n
-    b(1).CData(i,:) = colors.doses{i};
-    b(2).CData(i,:) = colors.dosesDarker{i};
+if strcmpi(p.Results.IncludeKTR,'on')
+
+    data_for_resp_nfkb = nan(1,n);
+    data_for_resp_ktr = nan(1,n);
+    for i = 1:n
+        data_for_resp_nfkb(i) = ID(i).metrics.responders_fraction_nfkb;
+        data_for_resp_ktr(i) = ID(i).metrics.responders_fraction_ktr;
+    end
+    data_for_resp_bar = [data_for_resp_nfkb;data_for_resp_ktr];
+
+    %bargraph
+    figure
+    b = bar(data_for_resp_bar', 'FaceColor', 'flat');
+    colors = setcolors;
+    for i = 1:n
+        b(1).CData(i,:) = colors.doses{i};
+        b(2).CData(i,:) = colors.dosesDarker{i};
+    end
+else
+    data_for_resp_nfkb = nan(1,n);
+    for i = 1:n
+        data_for_resp_nfkb(i) = ID(i).metrics.responders_fraction_nfkb;
+    end
+    data_for_resp_bar = [data_for_resp_nfkb];
+
+    %bargraph
+    figure
+    b = bar(data_for_resp_bar', 'FaceColor', 'flat');
+    colors = setcolors;
+    for i = 1:n
+        b(1).CData(i,:) = colors.doses{i};
+    end
 end
 
 %todo add dose labels as parameter or get from folder name
@@ -329,18 +377,21 @@ xlabel('Experiment ID')
 
 %% NFkB vs KTR responders plot
 %todo change percent responder plot above to use part of this
-responders(n).nfkb = [];
-responders(n).ktr = [];
-responders(n).dual = [];
-responders(n).non = [];
-doses(n).dose = [];
-for i = 1:n
-    responders(i).nfkb  = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 0))/numel(ID(i).metrics.responder_index_nfkb);
-    responders(i).ktr   = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 1 & ID(i).metrics.responder_index_nfkb == 0))/numel(ID(i).metrics.responder_index_nfkb);
-    responders(i).dual  = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 1 & ID(i).metrics.responder_index_nfkb == 1))/numel(ID(i).metrics.responder_index_nfkb);
-    responders(i).non   = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 0 & ID(i).metrics.responder_index_nfkb == 0))/numel(ID(i).metrics.responder_index_nfkb);
-    doses(i).dose = str2double(ID(i).info.dose{:});
-    %doses = [doses, str2num(ID(i).info.dose{:})];
+if strcmpi(p.Results.IncludeKTR,'on')
+
+    responders(n).nfkb = [];
+    responders(n).ktr = [];
+    responders(n).dual = [];
+    responders(n).non = [];
+    doses(n).dose = [];
+    for i = 1:n
+        responders(i).nfkb  = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 0))/numel(ID(i).metrics.responder_index_nfkb);
+        responders(i).ktr   = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 1 & ID(i).metrics.responder_index_nfkb == 0))/numel(ID(i).metrics.responder_index_nfkb);
+        responders(i).dual  = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 1 & ID(i).metrics.responder_index_nfkb == 1))/numel(ID(i).metrics.responder_index_nfkb);
+        responders(i).non   = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 0 & ID(i).metrics.responder_index_nfkb == 0))/numel(ID(i).metrics.responder_index_nfkb);
+        doses(i).dose = str2double(ID(i).info.dose{:});
+        %doses = [doses, str2num(ID(i).info.dose{:})];
+    end
 end
 
 %line plot for dual responders
