@@ -1,4 +1,4 @@
-function [ID] = graphMetrics(IDs, varargin)
+function [ID,data_for_osc_bar,data_for_resp_bar] = graphMetrics(IDs, varargin)
 
 %20200623 graphs metrics for Violin Plots, %responders, %oscillators for NFkB and KTR
 
@@ -25,10 +25,10 @@ addParameter(p,'NFkBBaselineDeduction', 'on', @(x) any(validatestring(x,expected
 addParameter(p, 'NFkBBackgroundAdjustment', 'on',@(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB fluorescence distribution adjustment
 addParameter(p,'NFkBBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of NFkB trajectories with correction factor for fluorescence drop derived from Mock experiments
 addParameter(p, 'IncludeKTR', 'on',@(x)any(validatestring(x, expectedFlags)));
-
+addParameter(p,'KTRBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off KTR baseline deduction
 
 %parameter to access metrics to be graphed in violin plots
-%addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList2.xlsx') %provide file path for Excel table with list of feature to be computed
+%addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
 addParameter(p, 'FeatureListFile', 'D:\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
 
 expectedFilters = {'none','nfkb', 'ktr', 'both', 'respective'};
@@ -59,9 +59,9 @@ ID(n).info = [];
 for i= 1:n
     [ID(i).metrics,~,ID(i).graph,ID(i).info,~] = nfkb_ktr_ratio_metrics(IDs(i), 'MinLifetime',p.Results.MinLifetime,...
                             'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
-                            'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
+                            'MinSize', p.Results.MinSize, 'Verbose', ... 
                             p.Results.Verbose, 'TrimFrame', p.Results.TrimFrame, 'StimulationTimePoint', p.Results.StimulationTimePoint,'FramesPerHour',...
-                            p.Results.FramesPerHour, 'NFkBBaselineDeduction', p.Results.NFkBBaselineDeduction, 'NFkBBackgroundAdjustment',p.Results.NFkBBackgroundAdjustment,...
+                            p.Results.FramesPerHour, 'NFkBBaselineDeduction', p.Results.NFkBBaselineDeduction,'KTRBaselineDeduction', p.Results.KTRBaselineDeduction, 'NFkBBackgroundAdjustment',p.Results.NFkBBackgroundAdjustment,...
                             'NFkBBaselineAdjustment', p.Results.NFkBBaselineAdjustment,'IncludeKTR',p.Results.IncludeKTR);
 end
 %% NFKB Metrics
@@ -69,8 +69,11 @@ end
 
 figure
 if strcmpi(p.Results.IncludeKTR,'on')
-
-    tiledlayout(4,round(numel(viol_met_nfkb)/2)) %looks best when using even number of metrics/features
+    if numel(viol_met_nfkb) < 21
+        tiledlayout(4,round(numel(viol_met_nfkb)/2)) %looks best when using even number of metrics/features
+    else
+        tiledlayout(8,round(numel(viol_met_nfkb)/4)) %looks best when using even number of metrics/features
+    end
 else
     tiledlayout(2,round(numel(viol_met_nfkb)/2)) %looks best when using even number of metrics/features
 end    
@@ -90,9 +93,9 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_nfkb)
             if i==1 
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_nfkb == 1, viol_met_index_nfkb{k})};
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_status_nfkb == 1, viol_met_index_nfkb{k})};
             else
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = [violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]), ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_nfkb == 1,viol_met_index_nfkb{k})];
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = [violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]), ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_status_nfkb == 1,viol_met_index_nfkb{k})];
             end
         end
        end
@@ -100,9 +103,9 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_nfkb)
             if i==1 
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_ktr == 1, viol_met_index_nfkb{k})};
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_status_ktr == 1, viol_met_index_nfkb{k})};
             else
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = [violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]), ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_ktr == 1, viol_met_index_nfkb{k})];
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = [violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]), ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_status_ktr == 1, viol_met_index_nfkb{k})];
             end
         end
        end
@@ -110,9 +113,9 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_nfkb)
             if i==1 
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1, viol_met_index_nfkb{k})};
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1, viol_met_index_nfkb{k})};
             else
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = [violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]), ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1, viol_met_index_nfkb{k})];
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = [violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]), ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1, viol_met_index_nfkb{k})];
             end
         end
        end   
@@ -151,9 +154,9 @@ if strcmpi(p.Results.IncludeKTR,'on')
            for i = 1:n
             for k = 1:numel(viol_met_ktr)
                 if i==1 
-                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1,viol_met_index_ktr{k})};
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_status_nfkb == 1,viol_met_index_ktr{k})};
                 else
-                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1,viol_met_index_ktr{k})];
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_status_nfkb == 1,viol_met_index_ktr{k})];
                 end
             end
            end
@@ -161,9 +164,9 @@ if strcmpi(p.Results.IncludeKTR,'on')
            for i = 1:n
             for k = 1:numel(viol_met_ktr)
                 if i==1 
-                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_ktr == 1, viol_met_index_ktr{k})};
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_status_ktr == 1, viol_met_index_ktr{k})};
                 else
-                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k})];
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_status_ktr == 1,viol_met_index_ktr{k})];
                 end
             end
            end
@@ -171,9 +174,9 @@ if strcmpi(p.Results.IncludeKTR,'on')
            for i = 1:n
             for k = 1:numel(viol_met_ktr)
                 if i==1 
-                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k} )};
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1,viol_met_index_ktr{k} )};
                 else
-                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k})];
+                violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]) = [violin.([viol_met_ktr{k},num2str(viol_met_index_ktr{k})]), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1,viol_met_index_ktr{k})];
                 end
             end
            end    
@@ -214,23 +217,23 @@ switch p.Results.FilterResponders
         end
     case 'both'
         for i = 1:n
-        osc_perc_nfkb(i) = numel(osc_cat(i).nfkb(osc_cat(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat(i).nfkb((ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 )));
-        osc_perc_ktr(i) = numel(osc_cat(i).ktr(osc_cat(i).ktr=='osc' & ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat(i).ktr((ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 )));
+        osc_perc_nfkb(i) = numel(osc_cat(i).nfkb(osc_cat(i).nfkb=='osc' & ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1 ))/numel(osc_cat(i).nfkb((ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1 )));
+        osc_perc_ktr(i) = numel(osc_cat(i).ktr(osc_cat(i).ktr=='osc' & ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1 ))/numel(osc_cat(i).ktr((ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1 )));
         end
     case 'ktr'
         for i = 1:n
-        osc_perc_nfkb(i) = numel(osc_cat(i).nfkb(osc_cat(i).nfkb=='osc' & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat(i).nfkb( ID(i).metrics.responder_index_ktr == 1 ));
-        osc_perc_ktr(i) = numel(osc_cat(i).ktr(osc_cat(i).ktr=='osc' & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat(i).ktr(ID(i).metrics.responder_index_ktr == 1 ));
+        osc_perc_nfkb(i) = numel(osc_cat(i).nfkb(osc_cat(i).nfkb=='osc' & ID(i).metrics.responder_status_ktr == 1 ))/numel(osc_cat(i).nfkb( ID(i).metrics.responder_status_ktr == 1 ));
+        osc_perc_ktr(i) = numel(osc_cat(i).ktr(osc_cat(i).ktr=='osc' & ID(i).metrics.responder_status_ktr == 1 ))/numel(osc_cat(i).ktr(ID(i).metrics.responder_status_ktr == 1 ));
         end
     case 'nfkb'
         for i = 1:n
-        osc_perc_nfkb(i) = numel(osc_cat(i).nfkb(osc_cat(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 ))/numel(osc_cat(i).nfkb( ID(i).metrics.responder_index_nfkb == 1 ));
-        osc_perc_ktr(i) = numel(osc_cat(i).ktr(osc_cat(i).ktr=='osc' & ID(i).metrics.responder_index_nfkb == 1 ))/numel(osc_cat(i).ktr(ID(i).metrics.responder_index_nfkb == 1 ));
+        osc_perc_nfkb(i) = numel(osc_cat(i).nfkb(osc_cat(i).nfkb=='osc' & ID(i).metrics.responder_status_nfkb == 1 ))/numel(osc_cat(i).nfkb( ID(i).metrics.responder_status_nfkb == 1 ));
+        osc_perc_ktr(i) = numel(osc_cat(i).ktr(osc_cat(i).ktr=='osc' & ID(i).metrics.responder_status_nfkb == 1 ))/numel(osc_cat(i).ktr(ID(i).metrics.responder_status_nfkb == 1 ));
         end
     case 'respective'
         for i = 1:n
-        osc_perc_nfkb(i) = numel(osc_cat(i).nfkb(osc_cat(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 ))/numel(osc_cat(i).nfkb( ID(i).metrics.responder_index_nfkb == 1 ));
-        osc_perc_ktr(i) = numel(osc_cat(i).ktr(osc_cat(i).ktr=='osc' & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat(i).ktr(ID(i).metrics.responder_index_ktr == 1 ));
+        osc_perc_nfkb(i) = numel(osc_cat(i).nfkb(osc_cat(i).nfkb=='osc' & ID(i).metrics.responder_status_nfkb == 1 ))/numel(osc_cat(i).nfkb( ID(i).metrics.responder_status_nfkb == 1 ));
+        osc_perc_ktr(i) = numel(osc_cat(i).ktr(osc_cat(i).ktr=='osc' & ID(i).metrics.responder_status_ktr == 1 ))/numel(osc_cat(i).ktr(ID(i).metrics.responder_status_ktr == 1 ));
         end
 end       
 data_for_osc_bar = [osc_perc_nfkb;osc_perc_ktr];
@@ -258,10 +261,10 @@ end
 osc_cat_norm(n).nfkb = [];
 
 for i = 1:n
-osc_cat_norm(i).nfkb    =  get_osc_cats(ID(i).metrics.peakfreq_norm_nfkb,ID(i).metrics.off_times_nfkb,'cutoff_fq', 0.42);
+osc_cat_norm(i).nfkb    =  get_osc_cats(ID(i).metrics.peakfreq_nfkb,ID(i).metrics.off_times_nfkb,'cutoff_fq', 0.42);
 %todo find proper frequency threshold for KTR
     if strcmpi(p.Results.IncludeKTR,'on')
-        osc_cat_norm(i).ktr    =  get_osc_cats(ID(i).metrics.peakfreq_norm_ktr,ID(i).metrics.off_times_ktr,'cutoff_fq', 0.42);            
+        osc_cat_norm(i).ktr    =  get_osc_cats(ID(i).metrics.peakfreq_ktr,ID(i).metrics.off_times_ktr,'cutoff_fq', 0.42);            
     end
 end
 
@@ -281,27 +284,27 @@ switch p.Results.FilterResponders
         end
     case 'both' 
         for i = 1:n
-        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).nfkb((ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 )));
+        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1 ))/numel(osc_cat_norm(i).nfkb((ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1 )));
         if strcmpi(p.Results.IncludeKTR,'on')
-        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).ktr((ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1 )));
+        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1 ))/numel(osc_cat_norm(i).ktr((ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1 )));
         end
         end
     case 'ktr'
         for i = 1:n
-        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).nfkb( ID(i).metrics.responder_index_ktr == 1 ));
-        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).ktr(ID(i).metrics.responder_index_ktr == 1 ));
+        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_status_ktr == 1 ))/numel(osc_cat_norm(i).nfkb( ID(i).metrics.responder_status_ktr == 1 ));
+        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_status_ktr == 1 ))/numel(osc_cat_norm(i).ktr(ID(i).metrics.responder_status_ktr == 1 ));
         end
     case 'nfkb'
         for i = 1:n
-        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 ))/numel(osc_cat_norm(i).nfkb( ID(i).metrics.responder_index_nfkb == 1 ));
+        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_status_nfkb == 1 ))/numel(osc_cat_norm(i).nfkb( ID(i).metrics.responder_status_nfkb == 1 ));
         if strcmpi(p.Results.IncludeKTR,'on')
-        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_index_nfkb == 1 ))/numel(osc_cat_norm(i).ktr(ID(i).metrics.responder_index_nfkb == 1 ));
+        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_status_nfkb == 1 ))/numel(osc_cat_norm(i).ktr(ID(i).metrics.responder_status_nfkb == 1 ));
         end
         end
     case 'respective'
         for i = 1:n
-        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_index_nfkb == 1 ))/numel(osc_cat_norm(i).nfkb( ID(i).metrics.responder_index_nfkb == 1 ));
-        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_index_ktr == 1 ))/numel(osc_cat_norm(i).ktr(ID(i).metrics.responder_index_ktr == 1 ));
+        osc_perc_nfkb(i) = numel(osc_cat_norm(i).nfkb(osc_cat_norm(i).nfkb=='osc' & ID(i).metrics.responder_status_nfkb == 1 ))/numel(osc_cat_norm(i).nfkb( ID(i).metrics.responder_status_nfkb == 1 ));
+        osc_perc_ktr(i) = numel(osc_cat_norm(i).ktr(osc_cat_norm(i).ktr=='osc' & ID(i).metrics.responder_status_ktr == 1 ))/numel(osc_cat_norm(i).ktr(ID(i).metrics.responder_status_ktr == 1 ));
         end
 end      
 
@@ -310,8 +313,8 @@ if strcmpi(p.Results.IncludeKTR,'on')
     data_for_osc_bar = [osc_perc_nfkb;osc_perc_ktr];
 else
     data_for_osc_bar = [osc_perc_nfkb];
-end
 
+end
 figure
 b = bar(data_for_osc_bar', 'FaceColor', 'flat');
 colors = setcolors;
@@ -385,10 +388,10 @@ if strcmpi(p.Results.IncludeKTR,'on')
     responders(n).non = [];
     doses(n).dose = [];
     for i = 1:n
-        responders(i).nfkb  = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 0))/numel(ID(i).metrics.responder_index_nfkb);
-        responders(i).ktr   = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 1 & ID(i).metrics.responder_index_nfkb == 0))/numel(ID(i).metrics.responder_index_nfkb);
-        responders(i).dual  = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 1 & ID(i).metrics.responder_index_nfkb == 1))/numel(ID(i).metrics.responder_index_nfkb);
-        responders(i).non   = numel(ID(i).metrics.responder_index_nfkb(ID(i).metrics.responder_index_ktr == 0 & ID(i).metrics.responder_index_nfkb == 0))/numel(ID(i).metrics.responder_index_nfkb);
+        responders(i).nfkb  = numel(ID(i).metrics.responder_status_nfkb(ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 0))/numel(ID(i).metrics.responder_status_nfkb);
+        responders(i).ktr   = numel(ID(i).metrics.responder_status_nfkb(ID(i).metrics.responder_status_ktr == 1 & ID(i).metrics.responder_status_nfkb == 0))/numel(ID(i).metrics.responder_status_nfkb);
+        responders(i).dual  = numel(ID(i).metrics.responder_status_nfkb(ID(i).metrics.responder_status_ktr == 1 & ID(i).metrics.responder_status_nfkb == 1))/numel(ID(i).metrics.responder_status_nfkb);
+        responders(i).non   = numel(ID(i).metrics.responder_status_nfkb(ID(i).metrics.responder_status_ktr == 0 & ID(i).metrics.responder_status_nfkb == 0))/numel(ID(i).metrics.responder_status_nfkb);
         doses(i).dose = str2double(ID(i).info.dose{:});
         %doses = [doses, str2num(ID(i).info.dose{:})];
     end

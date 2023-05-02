@@ -35,8 +35,8 @@ sig_stats.peak2rms_nfkb     =peak2rms(smoothData,2);
 sig_stats.rms_nfkb          =rms(smoothData')';
 sig_stats.peak2peak_nfkb    = peak2peak(smoothData,2);
 sig_stats.mean_movmad_nfkb  =mean( movmad(smoothData,3,2),2);
-sig_stats.mean_movstd       =mean( movstd(smoothData,3,[],2),2);
-sig_stats.mean_movvar       =mean( movvar(smoothData,3,[],2),2);
+sig_stats.mean_movstd_nfkb       =mean( movstd(smoothData,3,[],2),2);
+sig_stats.mean_movvar_nfkb       =mean( movvar(smoothData,3,[],2),2);
   
 %psd = power spectral density, also called power in Ade's metrics
 %todo!! FIX power is actually sth different, with 'power' instead of 'psd'
@@ -44,11 +44,11 @@ sig_stats.mean_movvar       =mean( movvar(smoothData,3,[],2),2);
     %[~, sig_stats.(stat)]=pwelch(Data',[],[],[],Fs,'one-sided','power');
     %[pwr, fq] = periodogram(smoothData',[], [], Fs, 'power');      
     n = size(time_series_mod,2); 
-    [pwr,fq]=pwelch(smoothData',n,10,256,Fs,'one-sided','psd');
+    [pwr,fq]=pwelch(smoothData',n,10,256,Fs,'one-sided','psd'); %window size is full length of data?
 %    [pwr,fq]=pwelch(smoothData',n,10,256,Fs,'one-sided',stat);
     sig_stats.fq_nfkb       =fq';
     %normalize power/psd to 1
-sig_stats.psd_nfkb      =transpose(pwr./sum(pwr,1));
+    sig_stats.psd_nfkb      =transpose(pwr./sum(pwr,1));
             
 %oscpower, also referred to bandpower
     pwr = transpose(sig_stats.psd_nfkb) ; fq = transpose(sig_stats.fq_nfkb);% 

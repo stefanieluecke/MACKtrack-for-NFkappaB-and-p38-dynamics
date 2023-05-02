@@ -20,6 +20,8 @@ colors.dosesDarker{3} = [64,224,208].*0.65/255;
 colors.dosesDarker{4}= [255,165,0].*0.65/255;
 colors.dosesDarker{5} =[240,128,128].*0.65/255;
 colors.dosesDarker{6} = [178,34,34].*0.65/255;
+colors.dosesDarker{7} =[190,50,50].*0.65/255;
+colors.dosesDarker{8} = [220,70,70].*0.65/255;
 
 %Stefanie's colors as scheme
 colors.doses{1} = [0,0,139]/255;
@@ -28,6 +30,8 @@ colors.doses{3} = [64,224,208]/255;
 colors.doses{4}= [255,165,0]/255;
 colors.doses{5} =[240,128,128]/255;
 colors.doses{6} = [178,34,34]/255;
+colors.doses{7} =[190,50,50]/255;
+colors.doses{8} = [220,70,70]/255;
 
 
 
@@ -81,6 +85,8 @@ colors.CoCulture_light = [177,156,217]/255;
 % p38 project colors
 colors.mVen = [0.9290, 0.6940, 0.1250];
 colors.mVenKTR = [119 172 48]/255;
+colors.p38 = [68 114 196]/255;
+colors.gray = [130 130 130]/255;
               
 % "4th of July" theme - 2 bright, 2 dark.
 colors.theme1{1} = colors.red;

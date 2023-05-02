@@ -72,23 +72,24 @@ ID(n).features = [];
 for i= 1:n
     [ID(i).metrics,~,ID(i).graph,ID(i).info,~] = nfkb_ktr_ratio_metrics(IDs(i), 'MinLifetime',p.Results.MinLifetime,...
                             'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
-                            'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
+                            'MinSize', p.Results.MinSize,'Verbose', ... 
                             p.Results.Verbose, 'TrimFrame', p.Results.TrimFrame, 'StimulationTimePoint', p.Results.StimulationTimePoint, 'FramesPerHour', p.Results.FramesPerHour,'IncludeKTR',p.Results.IncludeKTR,'NFkBBaselineAdjustment', p.Results.NFkBBaselineAdjustment);
+%{
     if strcmpi(p.Results.IncludeKTR,'on')
 
         ID(i).features = computeFeatures(IDs(i), 'metrics', ID(i).metrics, 'FeatureListTable', [ViolMetTableNFkB;ViolMetTableKTR],... 
                                     'MinLifetime',p.Results.MinLifetime, 'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
-                                    'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
+                                    'MinSize', p.Results.MinSize, 'Verbose', ... 
                                     p.Results.Verbose, 'TrimFrame', p.Results.TrimFrame, ...
                                     'StimulationTimePoint', p.Results.StimulationTimePoint, 'FramesPerHour', p.Results.FramesPerHour,'IncludeKTR',p.Results.IncludeKTR);
         else
             ID(i).features = computeFeatures(IDs(i), 'metrics', ID(i).metrics, 'FeatureListTable', [ViolMetTableNFkB],... 
                                     'MinLifetime',p.Results.MinLifetime, 'OnThreshNFkB',p.Results.OnThreshNFkB,'OnThreshKTR',p.Results.OnThreshKTR,...
-                                    'MinSize', p.Results.MinSize,'StartThreshNFkB', p.Results.StartThreshNFkB,'StartThreshKTR', p.Results.StartThreshKTR, 'Verbose', ... 
+                                    'MinSize', p.Results.MinSize, 'Verbose', ... 
                                     p.Results.Verbose, 'TrimFrame', p.Results.TrimFrame, ...
                                     'StimulationTimePoint', p.Results.StimulationTimePoint, 'FramesPerHour', p.Results.FramesPerHour,'IncludeKTR',p.Results.IncludeKTR);
     end
-
+%}
 end
 
 %% Responder Filtering
@@ -97,9 +98,11 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_nfkb)
             if i==1 
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).features.(viol_met_nfkb{k})(:, viol_met_index_nfkb{k})};
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).metrics.(viol_met_nfkb{k})(:, viol_met_index_nfkb{k})};
+%            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).features.(viol_met_nfkb{k})(:, viol_met_index_nfkb{k})};
             else
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]){:}, ID(i).features.(viol_met_nfkb{k})(:, viol_met_index_nfkb{k})};
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]){:}, ID(i).metrics.(viol_met_nfkb{k})(:, viol_met_index_nfkb{k})};
+ %           violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]){:}, ID(i).features.(viol_met_nfkb{k})(:, viol_met_index_nfkb{k})};
             end
         end
        end
@@ -107,9 +110,11 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_nfkb)
             if i==1 
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).features.(viol_met_nfkb{k})(ID(i).metrics.responder_index_nfkb == 1, viol_met_index_nfkb{k})};
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_status_nfkb == 1, viol_met_index_nfkb{k})};
+  %          violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).features.(viol_met_nfkb{k})(ID(i).metrics.responder_status_nfkb == 1, viol_met_index_nfkb{k})};
             else
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]){:}, ID(i).features.(viol_met_nfkb{k})(ID(i).metrics.responder_index_nfkb == 1,viol_met_index_nfkb{k})};
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]){:}, ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_status_nfkb == 1,viol_met_index_nfkb{k})};
+   %         violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]){:}, ID(i).features.(viol_met_nfkb{k})(ID(i).metrics.responder_status_nfkb == 1,viol_met_index_nfkb{k})};
             end
         end
        end
@@ -117,9 +122,11 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_nfkb)
             if i==1 
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).features.(viol_met_nfkb{k})(ID(i).metrics.responder_index_ktr == 1, viol_met_index_nfkb{k})};
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_status_ktr == 1, viol_met_index_nfkb{k})};
+%            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).features.(viol_met_nfkb{k})(ID(i).metrics.responder_status_ktr == 1, viol_met_index_nfkb{k})};
             else
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]){:}, ID(i).features.(viol_met_nfkb{k})(ID(i).metrics.responder_index_ktr == 1, viol_met_index_nfkb{k})};
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]){:}, ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_status_ktr == 1, viol_met_index_nfkb{k})};
+ %           violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]){:}, ID(i).features.(viol_met_nfkb{k})(ID(i).metrics.responder_status_ktr == 1, viol_met_index_nfkb{k})};
             end
         end
        end
@@ -127,9 +134,11 @@ switch p.Results.FilterResponders
        for i = 1:n
         for k = 1:numel(viol_met_nfkb)
             if i==1 
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).features.(viol_met_nfkb{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1, viol_met_index_nfkb{k})};
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1, viol_met_index_nfkb{k})};
+ %           violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {ID(i).features.(viol_met_nfkb{k})(ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1, viol_met_index_nfkb{k})};
             else
-            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]){:}, ID(i).features.(viol_met_nfkb{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1, viol_met_index_nfkb{k})};
+            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]){:}, ID(i).metrics.(viol_met_nfkb{k})(ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1, viol_met_index_nfkb{k})};
+%            violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]) = {violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]){:}, ID(i).features.(viol_met_nfkb{k})(ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1, viol_met_index_nfkb{k})};
             end
         end
        end   
@@ -165,7 +174,7 @@ end
 
 %% Calculate statistical difference between features % NOTE only works for comparison of 2 cond
 for j = 1:numel(viol_met_nfkb)
-    if ~iscategorical (ID(i).features.(viol_met_nfkb{j}))
+    if ~iscategorical (ID(i).metrics.(viol_met_nfkb{j}))
         [~, ks_pval.([viol_met_nfkb{j},num2str(viol_met_index_nfkb{j})]), ~] = kstest2(violin.([viol_met_nfkb{j},num2str(viol_met_index_nfkb{j})]){1}, violin.([viol_met_nfkb{j},num2str(viol_met_index_nfkb{j})]){2}); %continuous 2-sample ks test
     end
 end
@@ -192,11 +201,11 @@ end
 
 violin_spacing = 1:n;
 for k = 1:numel(viol_met_nfkb)
-     if ~iscategorical (ID(i).features.(viol_met_nfkb{k}))
+     if ~iscategorical (ID(i).metrics.(viol_met_nfkb{k}))
      %   violin_mack(violin.(viol_met_nfkb{k}), violin_spacing, 'Area', 0.05, 'YLim', [-5 15])
         axes.ax(k) = nexttile;
-        violin_mack_update(violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]),violin_spacing,'Axes', axes.ax(k), 'Area', 0.15,'XSpace', 0.4, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'off', 'MarkerSize', 6, 'ShowBins', 'off','Mode', 'off', 'Color', p.Results.Color);
-    %   violin_kernel(violin.(viol_met_nfkb{k}),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
+        violin_mack_update(violin.([viol_met_nfkb{k},num2str(viol_met_index_nfkb{k})]),violin_spacing,'Axes', axes.ax(k), 'Area', 0.05,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'off', 'MarkerSize', 6, 'ShowBins', 'off','Mode', 'off', 'Color', p.Results.Color);
+  %   violin_kernel(violin.(viol_met_nfkb{k}),violin_spacing,'Axes', axes.ax(k), 'Area', 0.04,'XSpace', 0.1, 'BinScale', 1,'Smoothing', 'on', 'Connect', 'on', 'MarkerSize', 7, 'ShowBins', 'off');
         set(axes.ax(k),'XTick',1:n, 'XTickLabel',p.Results.XLabel,'Box','on','GridLineStyle', ':','LineWidth',1,...  
        'YTickLabelMode', 'auto', 'Color', ones(1,3)*1,'XGrid', 'on','GridColor', 'w', 'XTickLabelRotation', 45);
         title([viol_met_nfkb{k},' ',num2str(viol_met_index_nfkb{k})], 'Interpreter', 'none')
@@ -222,9 +231,9 @@ if strcmpi(p.Results.IncludeKTR,'on')
            for i = 1:n
             for k = 1:numel(viol_met_ktr)
                 if i==1 
-                violin.(viol_met_ktr{k}) = {ID(i).features.(viol_met_ktr{k})(:, viol_met_index_ktr{k})};
+                violin.(viol_met_ktr{k}) = {ID(i).metrics.(viol_met_ktr{k})(:, viol_met_index_ktr{k})};
                 else
-                violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).features.(viol_met_ktr{k})(:, viol_met_index_ktr{k})];
+                violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).metrics.(viol_met_ktr{k})(:, viol_met_index_ktr{k})];
                 end
             end
            end
@@ -232,9 +241,9 @@ if strcmpi(p.Results.IncludeKTR,'on')
            for i = 1:n
             for k = 1:numel(viol_met_ktr)
                 if i==1 
-                violin.(viol_met_ktr{k}) = {ID(i).features.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1,viol_met_index_ktr{k})};
+                violin.(viol_met_ktr{k}) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_status_nfkb == 1,viol_met_index_ktr{k})};
                 else
-                violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).features.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1,viol_met_index_ktr{k})];
+                violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_status_nfkb == 1,viol_met_index_ktr{k})];
                 end
             end
            end
@@ -242,9 +251,9 @@ if strcmpi(p.Results.IncludeKTR,'on')
            for i = 1:n
             for k = 1:numel(viol_met_ktr)
                 if i==1 
-                violin.(viol_met_ktr{k}) = {ID(i).features.(viol_met_ktr{k})(ID(i).metrics.responder_index_ktr == 1, viol_met_index_ktr{k})};
+                violin.(viol_met_ktr{k}) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_status_ktr == 1, viol_met_index_ktr{k})};
                 else
-                violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).features.(viol_met_ktr{k})(ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k})];
+                violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_status_ktr == 1,viol_met_index_ktr{k})];
                 end
             end
            end
@@ -252,9 +261,9 @@ if strcmpi(p.Results.IncludeKTR,'on')
            for i = 1:n
             for k = 1:numel(viol_met_ktr)
                 if i==1 
-                violin.(viol_met_ktr{k}) = {ID(i).features.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k} )};
+                violin.(viol_met_ktr{k}) = {ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1,viol_met_index_ktr{k} )};
                 else
-                violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).features.(viol_met_ktr{k})(ID(i).metrics.responder_index_nfkb == 1 & ID(i).metrics.responder_index_ktr == 1,viol_met_index_ktr{k})];
+                violin.(viol_met_ktr{k}) = [violin.(viol_met_ktr{k}), ID(i).metrics.(viol_met_ktr{k})(ID(i).metrics.responder_status_nfkb == 1 & ID(i).metrics.responder_status_ktr == 1,viol_met_index_ktr{k})];
                 end
             end
            end    

@@ -141,8 +141,11 @@ for j = 1:length(FeatureList)
             case{'baseline_nfkb','responder_index_nfkb','off_times_nfkb',...
                     'baseline_ktr','responder_index_ktr','off_times_ktr'}
                 features.(featName) = metrics.(featName);
-            case{'max_amplitude_nfkb','max_amplitude_4h_nfkb','max_integral_nfkb','max_derivative_nfkb','min_derivative_nfkb',...
-                    'max_amplitude_ktr','max_amplitude_4h_ktr','max_integral_ktr','max_derivative_ktr','min_derivative_ktr'}
+%            case{'max_amplitude_nfkb','max_amplitude_4h_nfkb','max_integral_nfkb','max_derivative_nfkb','min_derivative_nfkb',...
+ %                   'max_amplitude_ktr','max_amplitude_4h_ktr','max_integral_ktr','max_derivative_ktr','min_derivative_ktr'}
+  %              features.(featName) = metrics.(featName);
+            case{'max_amp_nfkb','max_integral_nfkb','max_derivative_nfkb','min_derivative_nfkb',...
+                    'max_amp_ktr','max_integral_ktr','max_derivative_ktr','min_derivative_ktr'}
                 features.(featName) = metrics.(featName);
             case{'peakfreq_nfkb', 'peakfreq_ktr', 'peakfreq_norm_nfkb', 'peakfreq_norm_ktr'}
                 features.(featName) = metrics.(featName);
@@ -151,8 +154,10 @@ for j = 1:length(FeatureList)
          %todo osc_frac from basic metrics function, pick threshold or replace entirely with osc_cat?
             case{'oscfrac_nfkb', 'oscfrac_ktr', 'oscfrac_norm_nfkb', 'oscfrac_norm_ktr'}
                 features.(featName) = metrics.(featName);
-            case{'pk1_time_nfkb','pk1_amp_nfkb','pk2_time_nfkb','pk2_amp_nfkb','pk1_prom_nfkb','pk2_prom_nfkb','pk1_height_nfkb','pk2_height_nfkb','pk1_width_nfkb','pk2_width_nfkb',...
-                    'pk1_time_ktr','pk1_amp_ktr','pk2_time_ktr','pk2_amp_ktr','pk1_prom_ktr','pk2_prom_ktr','pk1_height_ktr','pk2_height_ktr','pk1_width_ktr','pk2_width_ktr'}
+  %          case{'pk1_time_nfkb','pk1_amp_nfkb','pk2_time_nfkb','pk2_amp_nfkb','pk1_prom_nfkb','pk2_prom_nfkb','pk1_height_nfkb','pk2_height_nfkb','pk1_width_nfkb','pk2_width_nfkb',...
+ %                   'pk1_time_ktr','pk1_amp_ktr','pk2_time_ktr','pk2_amp_ktr','pk1_prom_ktr','pk2_prom_ktr','pk1_height_ktr','pk2_height_ktr','pk1_width_ktr','pk2_width_ktr'}
+            case{'pk1_time_nfkb','pk1_amp_nfkb','pk1_prom_nfkb','pk1_height_nfkb','pk1_width_nfkb',...
+                    'pk1_time_ktr','pk1_amp_ktr','pk1_prom_ktr','pk1_height_ktr','pk1_width_ktr'}
                 features.(featName) = metrics.(featName);
 %todo confirm envelope and duration thresholds are implemented
             case{'envelope_nfkb','duration_nfkb'}
