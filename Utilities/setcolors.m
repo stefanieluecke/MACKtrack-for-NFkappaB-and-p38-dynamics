@@ -87,6 +87,8 @@ colors.mVen = [0.9290, 0.6940, 0.1250];
 colors.mVenKTR = [119 172 48]/255;
 colors.p38 = [68 114 196]/255;
 colors.gray = [130 130 130]/255;
+colors.NFkBscram = [ 76 188 185]/255;
+colors.p38scram = [  189 169 71]/255;
               
 % "4th of July" theme - 2 bright, 2 dark.
 colors.theme1{1} = colors.red;
