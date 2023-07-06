@@ -18,9 +18,7 @@ end
 
 test_val = max(floor(times)) / 10^(floor(log10(max(floor(times)))));
 
-%todo SL temp fix 20201118
-if (test_val>=2) && (test_val<7)
-%if (test_val>3) && (test_val<7)
+if (test_val>3) && (test_val<7)
     info.TimeTicks = 0:10^(floor(log10(max(floor(times))))):max(floor(times));
 else
     tick_nos = 3:6;

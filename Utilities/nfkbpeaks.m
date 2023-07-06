@@ -1,4 +1,4 @@
-function [peak_times, peak_amps, valley_times, valley_amps, fig1] = nfkbpeaks(trajectories, baseline_stdv, varargin)
+function [peak_times, peak_amps, valley_times, valley_amps, fig1] = nfkbpeaks(trajectories, varargin)
 %% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % [peak_times, peak_amps, valley_times, valley_amps, fig1] = nfkbpeaks(trajectories, varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -33,7 +33,6 @@ p = inputParser;
 valid_data = @(x) assert((isnumeric(x)&&ismatrix(x)),...
     'input ''trajectories'' must be a matrix (where rows correspond to a set measurements for one individual');
 addRequired(p,'trajectories',valid_data);
-addRequired(p,'baseline_stdv',valid_data);
 
 % Optional parameters
 valid_val = @(x) assert(isnumeric(x)&&(numel(x)==1), 'input must be single numeric value');
@@ -51,7 +50,7 @@ addParameter(p,'YLim',[0.25 9] ,valid_lim);
 
 
 % Parse parameters, assign to variables
-parse(p,trajectories, baseline_stdv, varargin{:})
+parse(p,trajectories, varargin{:})
 num_peaks = p.Results.NumPeaks;
 begin_frame = p.Results.BeginFrame;
 end_frame = p.Results.EndFrame;
@@ -86,80 +85,26 @@ plot_idx=1;
 for i = 1:size(peak_times,1)
     vect = nfkb_smooth(i,1:min([end,end_frame]));
     if sum(~isnan(vect)) > 10
-        [pks, locs, width, prom, heights] = globalpeaks(vect,num_peaks);
+        [pks, locs, heights] = globalpeaks(vect,num_peaks);
     else
         pks = []; locs = []; heights = [];
     end
     % Supress any peaks that are too close to one another
-   
     [locs, order] = sort(locs,'ascend');
-    pks = pks(order);width = width(order); prom = prom(order); heights = heights(order);
-    
+    pks = pks(order);
+    heights = heights(order);
     while min(diff(locs)) < min_dist
         tmp = find(diff(locs)==min(diff(locs)),1,'first');
         tmp = tmp + (heights(tmp)>=heights(tmp+1));
         pks(tmp) = [];
         locs(tmp) = [];
-        width(tmp) = [];
-        prom(tmp) = [];
         heights(tmp) = [];
     end
     
-%{  
     % Supress early and low-quality peaks
     drops = (locs<begin_frame) | (heights<min_height);
     pks(drops) = [];
     locs(drops) = [];
- %}
-    %Filtering of peaks
-    
-    %Filtering for distance from StimulationTimePoint
-    pks(locs<(begin_frame)) = [];
-    width(locs<(begin_frame)) = [];
-    prom(locs<(begin_frame)) = [];
-    heights(locs<(begin_frame)) = [];
-    locs(locs<(begin_frame)) = [];
-
-    %{
-    %20211208 SL Testing: Filter to remove peaks with short peak prominenc based on abs value
-   locs(prom< 0.1) = [];
-   width(prom< 0.1) = []; 
-   pks(prom< 0.1) = [];
-   heights(prom< 0.1) = [];
-   prom(prom< 0.1) = [];%prom pks needs to be filtered after others
-%}
-    
-%    Filter to remove peaks with amplitudes below 0
-    locs(pks<= 0) = [];
-    width(pks<= 0) = [];
-    prom(pks<= 0) = [];
-    heights(pks<= 0) = [];
-    pks(pks<= 0) = []; %pks needs to be filtered after others
-
-    %{
-    %    Filter to remove peaks with heights lower than min_height
-    locs(heights< min_height) = [];
-    width(heights< min_height) = [];
-    pks(heights< min_height) = []; 
-    prom(heights< min_height) = [];
-    heights(heights< min_height) = [];%heights pks needs to be filtered after others
- %}   
-%    Filter to remove peaks with heights lower than 2* stdv of baseline
-    locs(heights< 2*baseline_stdv(i)) = [];
-    width(heights< 2*baseline_stdv(i)) = [];
-    pks(heights< 2*baseline_stdv(i)) = []; 
-    prom(heights< 2*baseline_stdv(i)) = [];
-    heights(heights< 2*baseline_stdv(i)) = [];%heights pks needs to be filtered after others
- %   
-%   Filter for peak width    
-    locs(width< 2) = [];
-    pks(width< 2) = []; 
-    prom(width< 2) = [];
-    heights(width< 2)= []; 
-    width(width< 2)= [];%width of pks needs to be filtered last 
-
-    
-    %Find peak and valley times and amp
     if ~isempty(locs)
         peak_times(i,1:length(locs)) = locs;
         peak_amps(i,1:length(locs)) = pks;
@@ -173,11 +118,11 @@ for i = 1:size(peak_times,1)
     % Show small multiples with called peaks - some randomness is introduced so same cells aren't always shown.
     % (if graph isn't filling up, increase cutoff (0.2 seems to work ok for 300-500 cells)
     if p.Results.ShowGraph
-        if (plot_idx<=length(ha)) && (length(pks)>6) && (rand(1) < 0.5)
+        if (plot_idx<=length(ha)) && (length(pks)>6) && (rand(1) < 0.2)
             plot(ha(plot_idx),1:length(vect),vect)
             hold(ha(plot_idx),'on')
             plot(ha(plot_idx),locs,pks,'ok','MarkerSize',4)
-            plot(ha(plot_idx),valley_times(i,:),valley_amps(i,:),'or','MarkerSize',4)
+            %plot(ha(plot_idx),valley_times(i,:),valley_amps(i,:),'or','MarkerSize',4)
             hold(ha(plot_idx),'off')
             set(ha(plot_idx),'XTickLabel',{},'YTickLabel',{},'XLim',[1 end_frame],'YLim',p.Results.YLim)
             plot_idx = plot_idx+1;
