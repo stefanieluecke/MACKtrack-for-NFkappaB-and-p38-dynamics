@@ -70,8 +70,9 @@ xpos = max(xvect)-0.02*(max(xvect)-min(xvect));
 ypos =  max(measure_bounds) - 0.26*diff(measure_bounds);
 
 fig = figure('name','smallmultiples');
+
 set(fig,'Position',[500, 350, 876, 1000]);
-ha = tight_subplot(p.Results.PlotSize(1),p.Results.PlotSize(2));
+ha = tight_subplot(p.Results.PlotSize(1),p.Results.PlotSize(2)); %refers to function in utilities folder
 
 
 for i =1:length(plot_order)

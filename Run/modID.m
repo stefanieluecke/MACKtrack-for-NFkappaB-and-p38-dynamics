@@ -44,7 +44,7 @@ for idx = 1:numel(data.dates)
     disp([parameters.SaveDirectory,', before: ', num2str(AllMeasurements.parameters.FramesPerHour),' frames per hr'])
     clear p;
     eval(data.modify{idx});
-    if exist('p','var'); 
+    if exist('p','var')
         AllMeasurements.parameters = combinestructures(p, AllMeasurements.parameters);
     else
         AllMeasurements.parameters.FramesPerHour = 12;

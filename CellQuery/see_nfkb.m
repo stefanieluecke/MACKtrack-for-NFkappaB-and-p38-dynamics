@@ -32,7 +32,7 @@ end
 info.ImageExpr = info.parameters.nfkbModule.ImageExpr;
 
 % Set display parameters
-t_hrs = 12; % Number of hours to display in graphs
+t_hrs = 13; % Number of hours to display in graphs
 graph.t = 0:1/info.parameters.FramesPerHour:t_hrs;
 
 max_shift = 0; % Max allowable frame shift in XY-specific correction
