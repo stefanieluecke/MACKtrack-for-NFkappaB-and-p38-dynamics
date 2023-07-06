@@ -58,12 +58,7 @@ table_data(sum(cellfun(@isempty,table_data),2)==size(table_data,2),:) = [];
 
 
 % Get IDs and pull out corresponding rows
-%ids = cellfun(@str2num,table_data(2:end,strcmpi(table_data(1,:),'#')), 'UniformOutput', false); 
-ids = cellfun(@str2num,table_data(2:end,strcmpi(table_data(1,:),'#'))); 
-
-% cellfun applies function to each cells in cell array, converts string to
-% number of the google sheet (all rows except 1st, in the column called #
-% (search all columns in row 1 for #)
+ids = cellfun(@str2num,table_data(2:end,strcmpi(table_data(1,:),'#')));
 if isempty(ids)
     error('ERROR: Couldn''t find a column named "#" in spreadsheet.')
 end
@@ -78,8 +73,6 @@ data.time_ranges = table_data(2:end,strcmpi(table_data(1,:),'t'));
 data.parameter_files = table_data(2:end,strcmpi(table_data(1,:),'params file'));
 data.save_dir = table_data(2:end,strcmpi(table_data(1,:),'save path'));
 data.modify = table_data(2:end,strcmpi(table_data(1,:),'other params'));
-%20201208 addiiton SL dose info from table
-data.dose = table_data(2:end,strcmpi(table_data(1,:),'dose'));
 % For parameter modifier column: sub in single quotes that are misformatted after google sheet read
 for idx = 1:length(data.modify)
         tmp_str = data.modify{idx};

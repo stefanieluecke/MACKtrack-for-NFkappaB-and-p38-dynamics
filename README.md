@@ -1,7 +1,6 @@
 # MACKtrack
 This is a MATLAB toolbox designed for automated cell tracking, analysis, and visualization from sequences of live-cell microscopy images.
-Author: Brooks Taylor.
-This branch has been updated by Stefanie Luecke, with the purpose of analyzing NFkB + p38-KTR dual reporter macrophage data.
+Author: Brooks Taylor, b4taylor@ucla.edu
 
 ## Download & Installation
 From command line:

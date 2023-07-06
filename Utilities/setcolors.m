@@ -5,36 +5,6 @@ function [colors] = setcolors(graph_flag)
 % graph_flag    (optional) if true, show colors on heatmap
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-%Stefanie's colors
-colors.dark_blue = [0,0,139]/255;
-colors.sky_blue =[135,206,250]/255;
-colors.turquoise = [64,224,208]/255;
-colors.orange2 = [255,165,0]/255;
-colors.light_red =[240,128,128]/255;
-colors.dark_red = [178,34,34]/255;
-
-%Stefanie's colors as scheme, darker
-colors.dosesDarker{1} = [0,0,139].*0.65/255;
-colors.dosesDarker{2}=[135,206,250].*0.65/255;
-colors.dosesDarker{3} = [64,224,208].*0.65/255;
-colors.dosesDarker{4}= [255,165,0].*0.65/255;
-colors.dosesDarker{5} =[240,128,128].*0.65/255;
-colors.dosesDarker{6} = [178,34,34].*0.65/255;
-colors.dosesDarker{7} =[190,50,50].*0.65/255;
-colors.dosesDarker{8} = [220,70,70].*0.65/255;
-
-%Stefanie's colors as scheme
-colors.doses{1} = [0,0,139]/255;
-colors.doses{2}=[135,206,250]/255;
-colors.doses{3} = [64,224,208]/255;
-colors.doses{4}= [255,165,0]/255;
-colors.doses{5} =[240,128,128]/255;
-colors.doses{6} = [178,34,34]/255;
-colors.doses{7} =[190,50,50]/255;
-colors.doses{8} = [220,70,70]/255;
-
-
-
 % W-qbio theme - used darker variants of these for info theory (Selimkhanov, Science 2014)
 colors.blue = [62 107 133]/255;
 colors.green = [0 195 169]/255;
@@ -60,7 +30,6 @@ colors.irf = [48 145 50]/255;
 
 % NFkB stimulus specificity colors
 colors.tnf = [118 180 203]/255;
-colors.tnf_light = [173 214 228]/255;
 colors.lps = [223 79 66]/255;
 colors.cpg = [136 180 69]/255;
 colors.pam = [230 130 57]/255;
@@ -72,24 +41,6 @@ colors.bg_gray = [175 176 179
                   232 233 239
                   255 255 255]/255;
 
-%TNFKO project colors
-colors.WT = [93,147,191]/255;
-colors.WT_light = [159,191,217]/255;
-colors.TNFKO = [233,72,73]/255;
-colors.TNFKO_light = [241,135,135]/255;
-colors.TNFKOP100KO = [119 172 48]/255;
-colors.TNFKOP100KO_light = [161 211 95]/255;
-colors.CoCulture = [118,83,189]/255;
-colors.CoCulture_light = [177,156,217]/255;
-
-% p38 project colors
-colors.mVen = [0.9290, 0.6940, 0.1250];
-colors.mVenKTR = [119 172 48]/255;
-colors.p38 = [68 114 196]/255;
-colors.gray = [130 130 130]/255;
-colors.NFkBscram = [ 76 188 185]/255;
-colors.p38scram = [  189 169 71]/255;
-              
 % "4th of July" theme - 2 bright, 2 dark.
 colors.theme1{1} = colors.red;
 colors.theme1{2} = [52 152 219]/255;
