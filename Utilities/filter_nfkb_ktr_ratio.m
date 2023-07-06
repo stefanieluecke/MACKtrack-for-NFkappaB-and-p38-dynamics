@@ -1,16 +1,16 @@
 function [graph, info, measure] = filter_nfkb_ktr_ratio(id,varargin)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-% [graph, info, measure] = see_nfkb_ktr(id,graph_flag, verbose_flag)
+% [graph, info, measure] = filter_nfkb_ktr_ratio(id,varargin)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-% SEE_NFKB_KTR is a data processing and visualization script specialized to display
-% a nuclear-translocating species (it looks for NFkBdimNuclear and NFkBdimCytoplasm measurements)together with cytoplasmic/nuclear ratio of a second species (e.g. KTR) cell-by-cell.
+% filter_nfkb_ktr_ratio is a data processing script specialized to process
+% data from a nuclear-translocating species (it looks for NFkBdimNuclear and NFkBdimCytoplasm measurements)together with cytoplasmic/nuclear ratio of a second species (e.g. KTR) cell-by-cell.
 %
 % INPUTS (required):
 % id             filename or experiment ID (from Google Spreadsheet specified in "locations.mat")
 %
 % INPUT PARAMETERS (optional; specify with name-value pairs)
 % 'Verbose'         'on' or 'off' - shows non-compacted graphs, e.g.
-%                   heatmap including cells to be filtered out(?), default
+%                   heatmap including cells to be filtered out, default
 %                   is off
 % 'MinLifetime'     final frame used to filter for long-lived cells, default set to 100
 % 'ConvectionShift' Maximum allowable time-shift between different XYs (to correct for poor mixing), default is 1
@@ -18,11 +18,7 @@ function [graph, info, measure] = filter_nfkb_ktr_ratio(id,varargin)
 % 'StartThreshNFkB'     max allowable starting threshhold to filter out cells
 %                   with pre-activated NFkB, default is 2
 % 'GraphLimitsNFkB' default is [-0.25 8]
-% ??'OnThreshNFkB'      default is 1 %? nfkb baseline seems to be defined without this below. Is this used at all..?
-% ??'StartThreshKTR'max allowable starting threshhold to filter out cells
-%                   with pre-activated KTR, default is 0.6 %currently set
-%                   so high no cells are filtered out
-%'GraphLimitsKTR'   default is [0 0.35]
+% ...
 
 % OUTPUTS:  
 % graph          primary output structure; must specify
@@ -37,7 +33,7 @@ function [graph, info, measure] = filter_nfkb_ktr_ratio(id,varargin)
 %% Create input parser object (checks if functions is provided with correct inputs), add required params from function input
 p = inputParser;
 % Required: ID input; checks whether ID input is valid (is a numeric array of only
-    % one number, or is a structure array (?), or if it is a file)
+    % one number, or is a structure array, or if it is a file)
 valid_id = @(x) assert((isnumeric(x)&&length(x)==1)||isstruct(x)||exist(x,'file'),...
     'ID input must be spreadsheet ID or full file path');
 addRequired(p,'id',valid_id);
@@ -45,8 +41,8 @@ addRequired(p,'id',valid_id);
 % Optional parameters; specifies allowed optional parameters
 expectedFlags = {'on','off'};
 addParameter(p,'Verbose','off', @(x) any(validatestring(x,expectedFlags)));%checks whether optional name-value argument matches on or off %checks if x matches expectedFlags
-addParameter(p,'MinLifetime',109, @isnumeric); %allows adjustment of minimum lifetime (?)
-addParameter(p,'MinSize',90); %allows adjustment of minimum size (?)
+addParameter(p,'MinLifetime',109, @isnumeric); %allows adjustment of minimum lifetime
+addParameter(p,'MinSize',90); %allows adjustment of minimum size
 addParameter (p, 'OnThreshNFkB', 3, @isnumeric); %sigma threshold for determining responders
 addParameter (p, 'GraphLimitsNFkB',[-0.25 7],@isnumeric);
 addParameter (p, 'OnThreshKTR', 3, @isnumeric);%sigma threshold for determining responders
@@ -90,7 +86,7 @@ info.OnThreshKTR = p.Results.OnThreshKTR;
 info.parameters.FramesPerHour = p.Results.FramesPerHour;
 
 %% Filtering
-robuststd = @(distr, cutoff) nanstd(distr(distr < (nanmedian(distr)+cutoff*nanstd(distr)))); %standard deviation of ??
+robuststd = @(distr, cutoff) nanstd(distr(distr < (nanmedian(distr)+cutoff*nanstd(distr)))); %standard deviation
 
 % For running eg Supriya's AllMeasurements files, rename fields as
 % necessary
@@ -109,9 +105,9 @@ end
 
 % Filtering, part 1 cell fate and cytoplasmic intensity
 droprows = []; %creates an empty matrix/array
-droprows = [droprows, sum(isnan(measure.NFkBdim_Nuclear(:,1:StimulationTimePoint)),2)>2]; % Use only cells existing @ expt start %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 2 NaN values in nuclear NFkB levels within baseline TPs
-droprows = [droprows, sum(isnan(measure.NFkBdim_Nuclear(:,1:MinLifetime)),2)>3]; % Use only long-lived cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 3 NaN values in nuclear NFkB levels within minimum lifetime
-droprows = [droprows, sum(measure.NFkBdim_Cyto_full(:,1:StimulationTimePoint)==0,2)>0]; % Very dim cells %concatenates a set of 1 or 0 value to droprow matrix (new column?) for each cells depening on whether there are more than 0 nfkb cytoplasmic values in baseline TPs that are equal to 0
+droprows = [droprows, sum(isnan(measure.NFkBdim_Nuclear(:,1:StimulationTimePoint)),2)>2]; % Use only cells existing @ expt start %concatenates a set of 1 or 0 value to droprow matrix for each cells depending on whether there are more than 2 NaN values in nuclear NFkB levels within baseline TPs
+droprows = [droprows, sum(isnan(measure.NFkBdim_Nuclear(:,1:MinLifetime)),2)>3]; % Use only long-lived cells %concatenates a set of 1 or 0 value to droprow matrix for each cells depening on whether there are more than 3 NaN values in nuclear NFkB levels within minimum lifetime
+droprows = [droprows, sum(measure.NFkBdim_Cyto_full(:,1:StimulationTimePoint)==0,2)>0]; % Exclude Very dim cells %concatenates a set of 1 or 0 value to droprow matrix for each cells depening on whether there are more than 0 nfkb cytoplasmic values in baseline TPs that are equal to 0
 
 if strcmpi(p.Results.IncludeKTR,'on')
     droprows = [droprows, ((nanmean(measure.KTR_nuc1(:,1:StimulationTimePoint), 2)< prctile(nanmean(measure.KTR_nuc1(:,1:StimulationTimePoint), 2), 5)) | (nanmean(measure.KTR_nuc1(:,1:StimulationTimePoint), 2)> prctile(nanmean(measure.KTR_nuc1(:,1:StimulationTimePoint), 2), 95)))]; %filters cells with very low or high KTR expression
@@ -122,24 +118,24 @@ nfkb = measure.NFkBdim_Nuclear(:,:); %nfkb is defined as NFkB nuclear measuremen
 %This does an adjustment for background fluorescence to make experiments comparable; option to turn
 
 if strcmpi(p.Results.NFkBBackgroundAdjustment,'on')
-    nfkb = nfkb/mean(info.parameters.adj_distr_NFkBdim(2,:)); %nfkb is re-defined of nfkb divided by mean of second row of adj_distr %? but I don't know what that does...
+    nfkb = nfkb/mean(info.parameters.adj_distr_NFkBdim(2,:)); %nfkb is re-defined of nfkb divided by mean of second row of adj_distr 
 end   
 
 %NFkB baseline deduction, simply deducting mean of unstimulated timepoints per cell
     nfkb_no_base_ded = nfkb;    
     
-    % Option to use Brooks' baseline deduction, eg for experiments with preactivation 
+    % Option to use Brooks' baseline deduction (baseline or minimum values later in trajectories used as baseline, whichever is smaller), eg for experiments with preactivation 
     if strcmpi(p.Results.BrooksBaseline ,'on')
             baseline_length_nfkb = size(measure.NFkBdim_Nuclear,2); % Endframe for baseline calculation (use entire vector), baseline length is the size of the rows, i.e. number of timepoints 
             nfkb_smooth = nan(size(nfkb)); %NaN array of same size as nfkb is created, for created smoothed trajectory
             for i = 1:size(nfkb,1)
-                nfkb_smooth(i,~isnan(nfkb(i,:))) = medfilt1(nfkb(i,~isnan(nfkb(i,:))),3); %replaces every element in nfkb_smooth that is not NaN in corresponding nfkb position with a 3rd order median filtered version %?whatever that means...
+                nfkb_smooth(i,~isnan(nfkb(i,:))) = medfilt1(nfkb(i,~isnan(nfkb(i,:))),3); %replaces every element in nfkb_smooth that is not NaN in corresponding nfkb position with a 3rd order median filtered version 
             end
             nfkb_min = prctile(nfkb_smooth(:,1:baseline_length_nfkb),5,2); %calculates the 5th percentile along rows of the nfkb smoothed trajectory up to the baseline length, Ade's version uses 2,2 instead of 5,2
-            nfkb_baseline = nanmin([nanmin(nfkb(:,1:4),[],2),nfkb_min],[],2); %nfkb baseline is defined as minimum of (nfkb_min and the minimum of nfkb at the first four timepoints)(the rows of ?), one per trajectory %?
+            nfkb_baseline = nanmin([nanmin(nfkb(:,1:4),[],2),nfkb_min],[],2); %nfkb baseline is defined as minimum of (nfkb_min and the minimum of nfkb at the first four timepoints)
     else
         
-    nfkb_baseline = nanmean(nfkb(:,1:StimulationTimePoint),2); %baseline is determined from 1st to 13nth timepoint 
+    nfkb_baseline = nanmean(nfkb(:,1:StimulationTimePoint),2); %baseline is determined from 1st to 13th timepoint 
     end
     
 if strcmpi(p.Results.NFkBBaselineDeduction,'on')
@@ -152,7 +148,7 @@ if strcmpi(p.Results.NFkBBaselineAdjustment,'on')
     slash_idx = strfind(home_folder,filesep); %looks for system-specific file separator in home_folder
     OneDrivePath = getenv('OneDrive');
     load([OneDrivePath, '\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\NFkBBaselineAdjustment.mat'],'-mat');
-%    load([home_folder(1:slash_idx(end-1)), 'BaselineAdjustment.mat'],'-mat'); % loads locations.mat from home folder%??, whether or not it's a .mat file %? I do not understand how this works...
+%    load([home_folder(1:slash_idx(end-1)), 'BaselineAdjustment.mat'],'-mat'); % loads locations.mat from home folder
     nfkb = nfkb - NFkBBaselineCorrFact(1:size(nfkb, 2));
 end
 
@@ -182,7 +178,7 @@ if strcmpi(p.Results.IncludeKTR,'on')
 %        slash_idx = strfind(home_folder,filesep); %looks for system-specific file separator in home_folder
         OneDrivePath = getenv('OneDrive');
         load([OneDrivePath, '\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\KTRBaselineAdjustment.mat'],'-mat');
-%       load([home_folder(1:slash_idx(end-1)), 'BaselineAdjustment.mat'],'-mat'); % loads locations.mat from home folder%??, whether or not it's a .mat file %? I do not understand how this works...
+%       load([home_folder(1:slash_idx(end-1)), 'BaselineAdjustment.mat'],'-mat'); % loads locations.mat from home folder
         ktr = ktr - KTRBaselineCorrFact(1:size(ktr, 2));
     end
 end
@@ -269,5 +265,5 @@ if strcmpi(p.Results.IncludeKTR,'on')
     info.ktr_baseline = ktr_baseline;
 end
 
-graph.t = ((-StimulationTimePoint+1)/info.parameters.FramesPerHour):(1/info.parameters.FramesPerHour):48; %creates a time axis vector for the graph from 0 to 48 in steps of 1/FramesperHour (12) %?why
+graph.t = ((-StimulationTimePoint+1)/info.parameters.FramesPerHour):(1/info.parameters.FramesPerHour):48; %creates a time axis vector for the graph from 0 to 48 in steps of 1/FramesperHour (12)
 graph.t = graph.t(1:min([length(graph.t),size(graph.var_nfkb,2)]));%time axis vector shortened to number of timepoints in data (if shorter)

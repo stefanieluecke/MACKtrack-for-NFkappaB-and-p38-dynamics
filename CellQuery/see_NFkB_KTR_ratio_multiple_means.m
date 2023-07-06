@@ -1,5 +1,5 @@
 function [ID] = see_NFkB_KTR_ratio_multiple_means(IDs, varargin)
-
+% OUTDATED - WOULD NEED EDITS BEFORE USE
 % 
 %Enter highest responder first
 %% INPUT PARSING

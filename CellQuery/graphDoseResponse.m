@@ -1,8 +1,6 @@
 function [ID, HillC_nfkb, HillC_ktr, halfA_conc_nfkb, halfA_conc_ktr, equ_nfkb, equ_ktr, doses] = graphDoseResponse(IDs, varargin)
 
 %20201209 graphs % responders for NFkB and KTR, with Hill coeff
-%todo add functionality to plot/determine Hill coeff on any metric of dose
-%response
 
 %for any number of experiment IDs
 p = inputParser;

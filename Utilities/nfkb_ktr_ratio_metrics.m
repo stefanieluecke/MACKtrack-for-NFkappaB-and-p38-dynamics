@@ -2,7 +2,7 @@ function [metrics,aux, graph, info, measure] = nfkb_ktr_ratio_metrics(id,varargi
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 % metrics = nfkb_ktr_metrics(id)
 %- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-% NFKBMETRICS uses the see_nfkb_native function to filter and preprocess NFkB trajectories,
+% nfkb_ktr_ratio_metrics uses the filter_nkfb_ktr_ratio function to filter and preprocess NFkB and p38-KTR trajectories,
 % then calculates related metrics regarding activation. Metric types include:
 % 
 % 1) time series (base NFkB and ktr dynamics, resampled to 12 frames/hr
@@ -20,7 +20,7 @@ function [metrics,aux, graph, info, measure] = nfkb_ktr_ratio_metrics(id,varargi
 % 'TrimFrame'        trim sets to common length (default = 254 timepoints) 
 % 'ConvectionShift'  max allowed time shift between scenes (to correct for poor mixing - default is no shift allowed)
 % 'MinSize'
-%
+% ... (see see_nfkb_ktr_ratio_multiple_HMs for full list)
 % OUTPUT: 
 % metrics   structure with output fields
 % aux       Extra data (e.g. fourier information (FFT, power, frequencies), thresholds used in envelope/duration)
@@ -169,7 +169,7 @@ end
     % end after 4h, i.e. 61 TPs (12 baseline, 1 start, 48 2h stim)
     smoothed = smoothdata(fillmissing(metrics.time_series_nfkb,'linear', 2,'EndValues','extrap'),2,'sgolay', 6); 
 %
-    metrics.derivatives_nfkb = (smoothed(:,StimulationTimePoint+2:62) - smoothed(:,StimulationTimePoint:60))/(1/6); %divided by 1/6 because 2 tp, ie 10 min is 1/6 of an hour?
+    metrics.derivatives_nfkb = (smoothed(:,StimulationTimePoint+2:62) - smoothed(:,StimulationTimePoint:60))/(1/6); %divided by 1/6 because 2 tp, ie 10 min is 1/6 of an hour
 %}
 %% TRIM EVERYBODY to a common length
 try
@@ -448,13 +448,12 @@ end
     Fs=12; 
     freq_range =[0.35 1];
     n = size(smoothed(:,StimulationTimePoint:end),2); 
-    [pwr,fq]=pwelch(smoothed(:,StimulationTimePoint:end)',n,10,256,Fs,'one-sided','psd'); %window size is full length of data? with 10 overlap, 256 is nfft
+    [pwr,fq]=pwelch(smoothed(:,StimulationTimePoint:end)',n,10,256,Fs,'one-sided','psd'); %window size is full length of data(?) with 10 overlap, 256 is nfft
     fq_nfkb       =fq';
     %normalize power/psd to 1
     psd_nfkb      =transpose(pwr./sum(pwr,1));        
     %oscpower, also referred to bandpower
     pwr = transpose(psd_nfkb) ; fq = transpose(fq_nfkb);% 
-    %todo see if freq_range etc need any adjustments esp for KTR
     bp= bandpower(pwr,fq,freq_range, 'psd')';
     metrics.oscpower_nfkb =bp;
 
@@ -842,8 +841,6 @@ end
         if(metrics.off_times_ktr(i)>0) %only calculate peakfreq if offtime is not 0
             y = metrics.time_series_ktr(i,StimulationTimePoint:(depth+StimulationTimePoint));
     %       y = metrics.time_series_ktr(i,1:depth);
-            %todo see if I need to increase padding due to very strict offtime determination
-            %todo why don't we use the entire trajectory?
             off_frame = min([length(y), metrics.off_times_ktr(i)*FramesPerHour+1+off_pad]); % (Pad w/ 1 extra hr of content)
             y(off_frame:end) = nan;
             y(isnan(y)) = [];
@@ -866,8 +863,6 @@ for i =1:size(metrics.time_series_ktr,1)
     [pks,locs] = globalpeaks(aux.ktr.power(i,:),2);
     % Ensure we're not getting a totally spurious peak
     
-    %todo check what to do/how to deal with a number of similarly sized
-    %peaks in fft that represent 'oscillating' noise!
     
     %if the two found peaks are not obviously different heights, both peaks kept
     if min(pks) < (0.1*max(pks))
@@ -952,13 +947,12 @@ end
     Fs=12; 
     freq_range =[0.35 1];
     n = size(smoothed(:,StimulationTimePoint:end),2); 
-    [pwr,fq]=pwelch(smoothed(:,StimulationTimePoint:end)',n,10,256,Fs,'one-sided','psd'); %window size is full length of data? with 10 overlap, 256 is nfft
+    [pwr,fq]=pwelch(smoothed(:,StimulationTimePoint:end)',n,10,256,Fs,'one-sided','psd'); %window size is full length of data(?) with 10 overlap, 256 is nfft
     fq_ktr =fq';
     %normalize power/psd to 1
     psd_ktr =transpose(pwr./sum(pwr,1));        
     %oscpower, also referred to bandpower
     pwr = transpose(psd_ktr) ; fq = transpose(fq_ktr);% 
-    %todo see if freq_range etc need any adjustments esp for KTR
     bp= bandpower(pwr,fq,freq_range, 'psd')';
     metrics.oscpower_ktr=bp;
 

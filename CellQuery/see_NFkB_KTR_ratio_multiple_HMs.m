@@ -1,7 +1,8 @@
 function [ID] = see_NFkB_KTR_ratio_multiple_HMs(IDs, varargin)
 
-% 
-%Enter highest responder first
+% Generates set of heatmaps for tracked microscopy (using
+% AllMeasurements.mat) for NFkB and p38-KTR data for experimental ID#
+% specified in google sheet, e.g. https://docs.google.com/spreadsheets/d/1WV87uePWKTUx428iSsRU5ZcP467nQtETqlevxCzwYL0/edit?pli=1#gid=0
 %% INPUT PARSING
 % Create input parser object, add required params from function input
 p = inputParser;
@@ -12,7 +13,7 @@ expectedFlags = {'on','off'};
 addRequired(p,'IDs');%vector containing IDs to be plotted
 addParameter(p,'Verbose','off', @(x) any(validatestring(x,expectedFlags)));%checks whether optional name-value argument matches on or off %checks if x matches expectedFlags
 addParameter(p,'MinLifetime',103, @isnumeric); %allows adjustment of minimum lifetime, default 1h baseline + 7.5 h
-addParameter(p,'MinSize',90); %allows adjustment of minimum size (?)
+addParameter(p,'MinSize',90); %allows adjustment of minimum size
 addParameter(p,'TrimFrame',157, @isnumeric);
 addParameter (p, 'OnThreshNFkB', 3, @isnumeric); %sigma threshold for determining responders
 addParameter (p, 'GraphLimitsNFkB',[-0.25 7],@isnumeric);
@@ -26,10 +27,10 @@ addParameter(p, 'StimulationTimePoint', 13, @isnumeric)
 addParameter(p, 'FramesPerHour', 12, @isnumeric)
 addParameter(p, 'NFkBBackgroundAdjustment', 'on',@(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB fluorescence distribution adjustment
 addParameter(p,'NFkBBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB baseline deduction
-addParameter(p,'NFkBBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of NFkB trajectories with correction factor for fluorescence drop derived from Mock experiments
+addParameter(p,'NFkBBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of NFkB trajectories with correction factor for fluorescence drop derived from Mock experiments (scope and setting specific)
 addParameter(p, 'BrooksBaseline', 'off', @(x) any(validatestring(x,expectedFlags)))
 addParameter(p,'KTRBaselineDeduction', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off NFkB baseline deduction
-addParameter(p,'KTRBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of KTR trajectories with correction factor for fluorescence drop derived from Mock experiments
+addParameter(p,'KTRBaselineAdjustment', 'on', @(x) any(validatestring(x,expectedFlags))) %option to turn off adjusment of KTR trajectories with correction factor for fluorescence drop derived from Mock experiments (scope and setting specific)
 
 expectedFilters = {'none','nfkb', 'ktr', 'both'};
 addParameter(p, 'FilterResponders','none', @(x) any(validatestring(x,expectedFilters)));%filter out non-responders or not
