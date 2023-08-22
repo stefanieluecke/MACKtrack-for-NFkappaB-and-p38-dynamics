@@ -532,7 +532,7 @@ end
     max_derivative_pk1_frame = nan(size(metrics.pk1_time_nfkb));
     metrics.min_derivative_pk1_nfkb = nan(size(metrics.pk1_time_nfkb));
     min_derivative_pk1_frame = nan(size(metrics.pk1_time_nfkb));
-    %{
+    %
     for i = 1:numel(metrics.max_derivative_pk1_nfkb )
         if ~isnan(metrics.pk1_time_nfkb(i)) &&  pk1_frame(i) <= 36
                 [metrics.max_derivative_pk1_nfkb(i), max_derivative_pk1_frame(i)] = nanmax(metrics.derivatives_nfkb(i,1:pk1_frame(i)),[],2);

@@ -34,8 +34,8 @@ addParameter (p, 'RestrictCellNumber', 'off',@(x)any(validatestring(x, expectedF
 addParameter (p, 'CellNumber', []);
 
 %parameter to access metrics to be graphed in violin plots
-%addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
-addParameter(p, 'FeatureListFile', 'D:\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
+addParameter(p, 'FeatureListFile', 'C:\Users\stlue\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
+%addParameter(p, 'FeatureListFile', 'D:\OneDrive\PostDoc UCLA\1 Post Doc UCLA\Matlab analysis\MACKtrack_SL\Metrics_SL\FeatureList.xlsx') %provide file path for Excel table with list of feature to be computed
 addParameter(p, 'XLabel', {})
 addParameter(p, 'Color', {[1,0,0], [0,1,0]})
 
